@@ -1,0 +1,25 @@
+{
+  "name": "cytoscape-pdf-export",
+  "version": "1.0.0",
+  "description": "Export cytoscape.js networks to PDF",
+  "main": "dist/cytoscape-pdf-export.cjs.js",
+  "module": "dist/cytoscape-pdf-export.esm.js",
+  "browser": "dist/cytoscape-pdf-export.umd.js",
+  "dependencies": {
+    "cytoscape": "^3.28.1"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^11.0.1",
+    "@rollup/plugin-node-resolve": "^7.0.0",
+    "rollup": "^1.29.0"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "node test/test.js",
+    "pretest": "npm run build"
+  },
+  "files": [
+    "dist"
+  ]
+}
