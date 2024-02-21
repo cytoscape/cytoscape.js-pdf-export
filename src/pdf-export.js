@@ -4,15 +4,19 @@ import blobStream from "blob-stream";
 import PDFDocument from 'pdfkit';
 
 
-export function pdfExport(options) {
+export default function pdfExport(options) {
   console.log("pdf export ???");
+  const cy = this;
 
   window.PDFDocument = PDFDocument;
   window.blobStream = blobStream;
 
   const ctx = new canvas2pdf.PdfContext(blobStream());
 
+  console.log(ctx);
 
+  bufferCanvasImage(cy, ctx, {});
+  console.log('after bufferCanvasImage');
 
   // // draw your canvas like you would normally
   // ctx.fillStyle = "yellow";
@@ -27,4 +31,48 @@ export function pdfExport(options) {
   // ctx.end();
 }
 
-export default pdfExport;
+const isNumber = obj => obj != null && typeof obj === typeof 1 && !isNaN( obj );
+
+
+function bufferCanvasImage(cy, ctx, options) {
+  const renderer = cy.renderer();
+  var eles = cy.mutableElements();
+  var bb = eles.boundingBox();
+  var ctrRect = renderer.findContainerClientCoords();
+  var width  = options.full ? Math.ceil( bb.w ) : ctrRect[2];
+  var height = options.full ? Math.ceil( bb.h ) : ctrRect[3];
+  var specdMaxDims = isNumber( options.maxWidth ) || isNumber( options.maxHeight );
+  var pxRatio = renderer.getPixelRatio();
+  var scale = 1;
+
+  console.log('bufferCanvasImage');
+  console.log(bb);
+  console.log(ctrRect);
+  console.log(pxRatio);
+
+  if(width > 0 && height > 0) {
+    // ctx.clearRect(0, 0, width, height);
+    const zsortedEles = renderer.getCachedZSortedEles();
+
+    if(options.full) {
+      // TODO
+    } else {
+      var pan = cy.pan();
+
+      var translation = {
+        x: pan.x * scale,
+        y: pan.y * scale
+      };
+
+      scale *= cy.zoom();
+
+      ctx.translate(translation.x, translation.y);
+      ctx.scale(scale, scale);
+
+      renderer.drawElements(ctx, zsortedEles);
+
+      ctx.scale(1/scale, 1/scale);
+      ctx.translate(-translation.x, -translation.y);
+    }
+  }
+};
