@@ -98,13 +98,21 @@ const fixColor = function (value) {
  * @param options Options passed to PDFDocument constructor.
  * @constructor
  */
-const PdfContext = function (stream, options) {
+const PdfContext = function(stream, options) {
   console.log('created local PdfContext');
   if (stream == null) {
     throw new Error("Stream must be provided.");
   }
 
-  const doc = new PDFDocument(options);
+  const doc = new PDFDocument({
+    autoFirstPage: false,
+    ...options
+  });
+  // PDF has 72 'units' per inch
+  doc.addPage({
+    size: [options.width, options.height]
+  });
+
   this.stream = doc.pipe(stream);
   let fontValue = "10px Helvetica";
   let textAlign = "left";
