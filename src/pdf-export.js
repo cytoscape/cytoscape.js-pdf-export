@@ -1,5 +1,5 @@
 import PDFDocument from "pdfkit";
-import canvas2pdf from "canvas2pdf";
+import PdfContext from "./canvas2pdf";
 import blobStream from "blob-stream";
 import saveAs from "file-saver";
 
@@ -28,10 +28,10 @@ export function pdfExport(options) {
   console.log("pdf export ???");
   const cy = this;
 
-  const ctx = new canvas2pdf.PdfContext(blobStream());
+  const ctx = new PdfContext(blobStream());
   console.log(ctx);
 
-  bufferCanvasImage(cy, ctx, {});
+  drawCanvasImage(cy, ctx, {});
   console.log('after bufferCanvasImage');
 
   // // draw your canvas like you would normally
@@ -47,10 +47,12 @@ export function pdfExport(options) {
   ctx.end();
 }
 
-const isNumber = obj => obj != null && typeof obj === typeof 1 && !isNaN( obj );
+function isNumber(obj) {
+  return obj != null && typeof obj === typeof 1 && !isNaN(obj);
+}
 
 
-function bufferCanvasImage(cy, ctx, options) {
+function drawCanvasImage(cy, ctx, options) {
   const renderer = cy.renderer();
   var eles = cy.mutableElements();
   var bb = eles.boundingBox();
@@ -82,13 +84,13 @@ function bufferCanvasImage(cy, ctx, options) {
 
       scale *= cy.zoom();
 
-      ctx.translate(translation.x, translation.y);
-      ctx.scale(scale, scale);
+      // ctx.translate(translation.x, translation.y);
+      // ctx.scale(scale, scale);
 
       renderer.drawElements(ctx, zsortedEles);
 
-      ctx.scale(1/scale, 1/scale);
-      ctx.translate(-translation.x, -translation.y);
+      // ctx.scale(1/scale, 1/scale);
+      // ctx.translate(-translation.x, -translation.y);
     }
   }
 };

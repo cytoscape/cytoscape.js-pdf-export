@@ -53,7 +53,7 @@ const cy = new Cytoscape({
 });
 
 cy.ready(() => {
-  cy.pdf();
+  window.pdf = () => cy.pdf();
 });
 
 
