@@ -98,7 +98,7 @@ const fixColor = function (value) {
  * @param options Options passed to PDFDocument constructor.
  * @constructor
  */
-const PdfContext = function(stream, options) {
+const PdfContext = function(stream, width, height) {
   console.log('created local PdfContext');
   if (stream == null) {
     throw new Error("Stream must be provided.");
@@ -106,12 +106,13 @@ const PdfContext = function(stream, options) {
 
   const doc = new PDFDocument({
     autoFirstPage: false,
-    ...options
   });
   // PDF has 72 'units' per inch
   doc.addPage({
-    size: [options.width, options.height]
+    size: [width, height]
   });
+
+  console.log(doc);
 
   this.stream = doc.pipe(stream);
   let fontValue = "10px Helvetica";
@@ -208,6 +209,10 @@ const PdfContext = function(stream, options) {
     },
   });
 
+  this.background = function (bg) {
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill(bg);
+  }
+
   this.end = function () {
     doc.end();
   };
@@ -257,9 +262,13 @@ const PdfContext = function(stream, options) {
     doc.stroke();
   };
 
-  this.fill = function () {
-    doc.fill();
+  this.fill = function (...args) {
+    doc.fill(...args);
   };
+
+  this.ellipse = function (...args) {
+    doc.ellipse(...args);
+  }
 
   this.rect = function (x, y, width, height) {
     doc.rect(x, y, width, height);
@@ -527,9 +536,9 @@ const PdfContext = function(stream, options) {
     console.log("createPattern not implemented");
   };
 
-  this.setLineDash = function (dashArray) {
-    console.log("setLineDash not implemented");
-  };
+  // this.setLineDash = function (dashArray) {
+  //   console.log("setLineDash not implemented");
+  // };
 
   this.drawFocusRing = function () {
     console.log("drawFocusRing not implemented");
