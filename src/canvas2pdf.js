@@ -209,6 +209,24 @@ const PdfContext = function(stream, width, height) {
     },
   });
 
+  Object.defineProperty(this, "textBaseline", {
+    get: function () {
+      return textBaseline;
+    },
+    set: function (value) {
+      textBaseline = value;
+    },
+  });
+
+  Object.defineProperty(this, "textAlign", {
+    get: function () {
+      return textAlign;
+    },
+    set: function (value) {
+      textAlign = value;
+    },
+  });
+
   this.background = function (bg) {
     doc.rect(0, 0, doc.page.width, doc.page.height).fill(bg);
   }
@@ -402,6 +420,7 @@ const PdfContext = function(stream, width, height) {
   };
 
   this.adjustTextX = function (text, x) {
+    console.log("  textAlign: " + textAlign);
     if (textAlign !== "start" || textAlign !== "left") {
       const width = doc.widthOfString(text);
       if (textAlign === "right" || textAlign === "end") {
@@ -415,6 +434,7 @@ const PdfContext = function(stream, width, height) {
 
   this.adjustTextY = function (text, y) {
     // baseline is top by default
+    console.log("  textAlign: " + textBaseline);
     if (textBaseline === "bottom") {
       y -= lineHeight;
     } else if (textBaseline === "middle") {
