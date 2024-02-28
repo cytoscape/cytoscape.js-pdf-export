@@ -5,6 +5,7 @@
 
   "scripts": {
     "dev": "webpack --mode development",
+    "pdfkit": "webpack --mode production --config webpack.pdfkit.config.js",
     "prod": "webpack --mode production"
   },
   "devDependencies": {
