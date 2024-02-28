@@ -260,20 +260,31 @@ const PdfContext = function(stream, width, height) {
     doc.transform(a, b, c, d, e, f);
   };
 
+  // sometimes cy.js calls beginPath() and then calls lineTo() which doesn't work with pdfkit
+  // May need to set to false in every draw function (oh well)
+  let nextLineToIsMoveTo = false;
+
   this.beginPath = function () {
-    // no-op
+    nextLineToIsMoveTo = true;
+  };
+
+  this.lineTo = function (x, y) {
+    if(nextLineToIsMoveTo) {
+      doc.moveTo(x, y);
+    } else {
+      doc.lineTo(x, y);
+    }
+    nextLineToIsMoveTo = false;
   };
 
   this.moveTo = function (x, y) {
     doc.moveTo(x, y);
+    nextLineToIsMoveTo = false;
   };
 
   this.closePath = function () {
     doc.closePath();
-  };
-
-  this.lineTo = function (x, y) {
-    doc.lineTo(x, y);
+    nextLineToIsMoveTo = false;
   };
 
   this.stroke = function () {
