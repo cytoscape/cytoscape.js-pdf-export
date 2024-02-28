@@ -3,12 +3,12 @@ import PdfContext from "./canvas2pdf";
 import blobStream from "blob-stream";
 import saveAs from "file-saver";
 
+import './pdfkit-virtual-files.js';  // https://github.com/blikblum/pdfkit-webpack-example/issues/1
 
-// Required by pdfkit webpack config or whatever I dunno
-// https://github.com/blikblum/pdfkit-webpack-example/issues/1
-import './pdfkit-virtual-files.js';
-
-
+/**
+ * PDF export cytoscape.js extension.
+ * 
+ */
 export default function register(cytoscape) {
   if(!cytoscape) { return; }
   cytoscape('core', 'pdf', pdfExport);
@@ -25,41 +25,17 @@ window.blobStream = blobStream;
 
 export function pdfExport(options) {
   const cy = this;
-  // Temporary, the calling code shoudl do the saveAs(...)
+  // Temporary, the calling code should do the saveAs(...)
   drawCanvasImage(cy, {
-    onFinish: blob => saveAs(blob, "example.pdf", true)
+    onFinish: blob => saveAs(blob, "example.pdf", true),
+    ...options
   });
 }
 
-function wrapObjectFunctions(obj, before, after) {
-  var key, value;
 
-  for (key in obj) {
-    value = obj[key];
-    if (typeof value === "function") {
-      wrapFunction(obj, key, value);
-    }
-  }
-
-  function wrapFunction(obj, fname, f) {
-    obj[fname] = function() {
-      var rv;
-      if (before) {
-        before(fname, this, arguments);
-      }
-      rv = f.apply(this, arguments); // Calls the original
-      if (after) {
-        after(fname, this, arguments, rv);
-      }
-      return rv;
-    };
-  }
-}
-
-function isNumber(obj) {
-  return obj != null && typeof obj === typeof 1 && !isNaN(obj);
-}
-
+/**
+ * Draw on the PDFCanvas
+ */
 function drawCanvasImage(cy, options) {
   const renderer = cy.renderer();
   var eles = cy.mutableElements();
@@ -78,6 +54,7 @@ function drawCanvasImage(cy, options) {
   const stream = blobStream();
   const ctx = new PdfContext(stream, width, height);
 
+  // for debg
   wrapObjectFunctions(ctx, (name, obj, args) => console.log(`${name}(${Array.from(args)})`));
 
   if(options.bg) {
@@ -122,3 +99,36 @@ function drawCanvasImage(cy, options) {
 
   renderer.path2dEnabled(path2dEnabled);
 };
+
+
+function isNumber(obj) {
+  return obj != null && typeof obj === typeof 1 && !isNaN(obj);
+}
+
+
+/**
+ * For debug
+ */
+function wrapObjectFunctions(obj, before, after) {
+  var key, value;
+
+  for (key in obj) {
+    value = obj[key];
+    if (typeof value === "function") {
+      wrapFunction(obj, key, value);
+    }
+  }
+
+  function wrapFunction(obj, fname, f) {
+    obj[fname] = function() {
+      if (before) {
+        before(fname, this, arguments);
+      }
+      let rv = f.apply(this, arguments); // Calls the original
+      if (after) {
+        after(fname, this, arguments, rv);
+      }
+      return rv;
+    };
+  }
+}

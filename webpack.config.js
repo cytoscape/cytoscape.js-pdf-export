@@ -2,11 +2,18 @@ const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
+// most of the config is for pdfkit (https://github.com/foliojs/pdfkit/tree/master/examples/webpack)
+
 module.exports = {
+  entry: path.resolve(__dirname, 'src/pdf-export.js'),
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'pdf-export-bundle.js',
+  },
   plugins: [
-    new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, 'src/index.html')
-    }),
+    // new HtmlWebpackPlugin({
+    //   template: path.resolve(__dirname, 'src/index.html')
+    // }),
     new webpack.ProvidePlugin({
       Buffer: ['buffer', 'Buffer'],
       process: 'process/browser'
@@ -34,21 +41,6 @@ module.exports = {
     rules: [
       // bundle and load afm files verbatim
       { test: /\.afm$/, type: 'asset/source' },
-      // bundle and load binary files inside static-assets folder as base64
-      {
-        test: /src[/\\]static-assets/,
-        type: 'asset/inline',
-        generator: {
-          dataUrl: content => {
-            return content.toString('base64');
-          }
-        }
-      },
-      // load binary files inside lazy-assets folder as an URL
-      {
-        test: /src[/\\]lazy-assets/,
-        type: 'asset/resource'
-      },
       // convert to base64 and include inline file system binary files used by fontkit and linebreak
       {
         enforce: 'post',

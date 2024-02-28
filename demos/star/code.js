@@ -1,11 +1,8 @@
-import Cytoscape from 'cytoscape';
-import pdfExport from './pdf-export';
-// import { saveAs } from 'file-saver';
+console.log(document.getElementById('cy'));
 
-Cytoscape.use(pdfExport);
-
-const cy = new Cytoscape({
+const cy = cytoscape({
   container: document.getElementById('cy'), // container to render in
+
   layout: {
     name: 'cose',
   },
@@ -53,8 +50,6 @@ const cy = new Cytoscape({
 });
 
 cy.ready(() => {
-  window.pdf = () => cy.pdf();
+  window.pdf = () => cy.pdf({ bg: '#000' });
 });
-
-
 

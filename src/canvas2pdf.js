@@ -420,7 +420,6 @@ const PdfContext = function(stream, width, height) {
   };
 
   this.adjustTextX = function (text, x) {
-    console.log("  textAlign: " + textAlign);
     if (textAlign !== "start" || textAlign !== "left") {
       const width = doc.widthOfString(text);
       if (textAlign === "right" || textAlign === "end") {
@@ -434,7 +433,6 @@ const PdfContext = function(stream, width, height) {
 
   this.adjustTextY = function (text, y) {
     // baseline is top by default
-    console.log("  textAlign: " + textBaseline);
     if (textBaseline === "bottom") {
       y -= lineHeight;
     } else if (textBaseline === "middle") {
