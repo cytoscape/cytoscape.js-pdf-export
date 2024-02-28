@@ -3,7 +3,7 @@
 (function(){
   var toJson = function(res){ return res.json(); };
 
-  const cy = cytoscape({
+  const cy = window.cy = cytoscape({
     container: document.getElementById('cy'),
 
     layout: {
@@ -18,6 +18,4 @@
   cy.ready(() => {
     window.pdf = () => cy.pdf();
   });
-
-  window.cy = cy;
 })();
