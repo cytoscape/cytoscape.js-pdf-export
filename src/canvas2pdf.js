@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { calculateArcToGeom } from './arcTo';
 
 /*
  *
@@ -113,6 +114,8 @@ const PdfContext = function(stream, width, height) {
   });
 
   console.log(doc);
+
+  this.doc = doc; // For debug
 
   this.stream = doc.pipe(stream);
   let fontValue = "10px Helvetica";
@@ -263,12 +266,15 @@ const PdfContext = function(stream, width, height) {
   // sometimes cy.js calls beginPath() and then calls lineTo() which doesn't work with pdfkit
   // May need to set to false in every draw function (oh well)
   let nextLineToIsMoveTo = false;
+  let px, py;
 
   this.beginPath = function () {
     nextLineToIsMoveTo = true;
   };
 
   this.lineTo = function (x, y) {
+    px = x;
+    py = y;
     if(nextLineToIsMoveTo) {
       doc.moveTo(x, y);
     } else {
@@ -279,8 +285,33 @@ const PdfContext = function(stream, width, height) {
 
   this.moveTo = function (x, y) {
     doc.moveTo(x, y);
+    px = x;
+    py = y;
     nextLineToIsMoveTo = false;
   };
+
+  this.arcTo = function (x1, y1, x2, y2, r) {
+    // pdfkit doesn't have an arcTo() function, so we convert arcTo() into lineTo() then arc()
+    const { T1, T2, C, a1, a2 } = 
+      calculateArcToGeom({
+        P0: { x: px, y: py},
+        P1: { x: x1, y: y1},
+        P2: { x: x2, y: y2},
+        r
+      });
+
+    doc.lineTo(T1.x, T1.y);
+
+    // the pdfkit arc() function calls moveTo(), which messes up calls to closePath()
+    const moveTo = doc.moveTo;
+    doc.moveTo = () => null;
+    doc.arc(C.x, C.y, r, a1, a2);
+    doc.moveTo = moveTo;
+
+    px = T2.x;
+    py = T2.y;
+  };
+
 
   this.closePath = function () {
     doc.closePath();
@@ -407,11 +438,16 @@ const PdfContext = function(stream, width, height) {
 
   this.bezierCurveTo = function (cp1x, cp1y, cp2x, cp2y, x, y) {
     doc.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
+    px = x;
+    py = y;
   };
 
   this.quadraticCurveTo = function (cpx, cpy, x, y) {
     doc.quadraticCurveTo(cpx, cpy, x, y);
+    px = x;
+    py = y;
   };
+
   this.createLinearGradient = function (x1, y1, x2, y2) {
     const gradient = doc.linearGradient(x1, y1, x2, y2);
     gradient.addColorStop = function (offset, color) {
@@ -589,9 +625,6 @@ const PdfContext = function(stream, width, height) {
     console.log("globalCompositeOperation not implemented");
   };
 
-  this.arcTo = function (x1, y1, x2, y2, radius) {
-    console.log("arcTo not implemented");
-  };
 };
 
 export default PdfContext;
