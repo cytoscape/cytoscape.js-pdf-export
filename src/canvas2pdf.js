@@ -292,7 +292,7 @@ const PdfContext = function(stream, width, height) {
 
   this.arcTo = function (x1, y1, x2, y2, r) {
     // pdfkit doesn't have an arcTo() function, so we convert arcTo() into lineTo() then arc()
-    const { T1, T2, C, a1, a2 } = 
+    const { T1, T2, C, a1, a2, ccw } = 
       calculateArcToGeom({
         P0: { x: px, y: py},
         P1: { x: x1, y: y1},
@@ -305,7 +305,7 @@ const PdfContext = function(stream, width, height) {
     // the pdfkit arc() function calls moveTo(), which messes up calls to closePath()
     const moveTo = doc.moveTo;
     doc.moveTo = () => null;
-    doc.arc(C.x, C.y, r, a1, a2);
+    doc.arc(C.x, C.y, r, a1, a2, ccw);
     doc.moveTo = moveTo;
 
     px = T2.x;

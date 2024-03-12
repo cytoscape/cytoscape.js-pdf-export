@@ -28,6 +28,26 @@ class Math2D {
     return a.x * b.x + a.y * b.y;
   }
 
+  static mag(a) {
+    return Math.sqrt(a.x * a.x + a.y * a.y);
+  }
+
+  // https://www.geeksforgeeks.org/orientation-3-ordered-points/
+  // To find orientation of ordered triplet 
+  // (p1, p2, p3). The function returns 
+  // following values 
+  // 'co' --> p, q and r are collinear
+  // 'cw' --> Clockwise
+  // 'ccw' --> Counterclockwise
+  static orientation(p1, p2, p3) {
+    // See 10th slides from following link 
+    // for derivation of the formula
+    let val = (p2.y - p1.y) * (p3.x - p2.x) - (p2.x - p1.x) * (p3.y - p2.y);
+    if (val == 0) return 'co'; // collinear
+    // clock or counterclock wise
+    return (val > 0) ? 'ccw' : 'cw';
+  }
+
   /* Find point on line defined parametrically by
     * L = P0 + t * direction */
   static linePointAt(P0, t, dir) {
@@ -139,6 +159,7 @@ export function calculateArcToGeom({ P0, P1, P2, r }) {
 
   const a1 = getAngleFromPosXAxis(T1, C);
   const a2 = getAngleFromPosXAxis(T2, C);
+  const ccw = Math2D.orientation(P0, P1, P2) === 'ccw';
 
-  return { T1, T2, C, a1, a2 };
+  return { T1, T2, C, a1, a2, ccw };
 } /* end of function findConstruction */
