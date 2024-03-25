@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import { calculateArcToGeom } from './arcTo';
+import { createAOP } from "./aop";
 
 /*
  *
@@ -100,7 +101,6 @@ const fixColor = function (value) {
  * @constructor
  */
 const PdfContext = function(stream, width, height) {
-  console.log('created local PdfContext');
   if (stream == null) {
     throw new Error("Stream must be provided.");
   }
@@ -113,10 +113,7 @@ const PdfContext = function(stream, width, height) {
     size: [width, height]
   });
 
-  console.log(doc);
-
   this.doc = doc; // For debug
-
   this.stream = doc.pipe(stream);
   let fontValue = "10px Helvetica";
   let textAlign = "left";
@@ -145,6 +142,7 @@ const PdfContext = function(stream, width, height) {
     };
     return data;
   };
+
 
   Object.defineProperty(this, "fillStyle", {
     get: function () {
@@ -189,7 +187,6 @@ const PdfContext = function(stream, width, height) {
       doc.lineJoin(value);
     },
   });
-
   Object.defineProperty(this, "globalAlpha", {
     get: function () {
       return doc.opacity();
@@ -198,7 +195,6 @@ const PdfContext = function(stream, width, height) {
       value >= 0.0 && value <= 1.0 && doc.opacity(value);
     },
   });
-
   Object.defineProperty(this, "font", {
     get: function () {
       return fontValue;
@@ -211,7 +207,6 @@ const PdfContext = function(stream, width, height) {
       lineHeight = doc.currentLineHeight(false);
     },
   });
-
   Object.defineProperty(this, "textBaseline", {
     get: function () {
       return textBaseline;
@@ -220,7 +215,6 @@ const PdfContext = function(stream, width, height) {
       textBaseline = value;
     },
   });
-
   Object.defineProperty(this, "textAlign", {
     get: function () {
       return textAlign;
@@ -263,34 +257,65 @@ const PdfContext = function(stream, width, height) {
     doc.transform(a, b, c, d, e, f);
   };
 
-  // sometimes cy.js calls beginPath() and then calls lineTo() which doesn't work with pdfkit
-  // May need to set to false in every draw function (oh well)
-  let nextLineToIsMoveTo = false;
-  let px, py;
+
+  // Define "advice" for functions
+  const aop = createAOP();
+  const { advice, state } = aop;
+  
+  advice('debug', (before, after) => {
+    before('all', (fname, ...args) => {
+      console.log(`${fname}(${Array.from(args)})`);
+    });
+  });
+
+  advice('point', (before, after) => {
+    const state = { px: 0, py: 0 };
+    const saveCoords = (fname, x, y) => {
+      state.px = x;
+      state.py = y;
+    };
+    before(['lineTo', 'moveTo'], saveCoords);
+    after(['arcTo', 'bezierCurveTo', 'quadraticCurveTo'], saveCoords);
+    return state;
+  });
+
+  /**
+   * Sometimes cy.js calls beginPath() and then immediatley calls lineTo() which doesn't work with pdfkit.
+   * Need to translate the the 'first' call to lineTo() into a call to moveTo().
+   */
+  advice('nextLineToIsMoveTo', (before, after) => {
+    const state = { nextLineToIsMoveTo: false };
+    before('beginPath', () => {
+      state.nextLineToIsMoveTo = true;
+    });
+    after(['lineTo', 'moveTo', 'arcTo', 'closePath'], () => {
+      state.nextLineToIsMoveTo = false;
+    });
+    return state;
+  });
+
 
   this.beginPath = function () {
-    nextLineToIsMoveTo = true;
+    // no-op
   };
 
   this.lineTo = function (x, y) {
-    px = x;
-    py = y;
+    const { nextLineToIsMoveTo } = state('nextLineToIsMoveTo');
     if(nextLineToIsMoveTo) {
       doc.moveTo(x, y);
     } else {
       doc.lineTo(x, y);
     }
-    nextLineToIsMoveTo = false;
   };
+
 
   this.moveTo = function (x, y) {
     doc.moveTo(x, y);
-    px = x;
-    py = y;
-    nextLineToIsMoveTo = false;
   };
 
   this.arcTo = function (x1, y1, x2, y2, r) {
+    const { px, py } = state('point');
+
     // pdfkit doesn't have an arcTo() function, so we convert arcTo() into lineTo() then arc()
     const { T1, T2, C, a1, a2, ccw } = 
       calculateArcToGeom({
@@ -307,15 +332,11 @@ const PdfContext = function(stream, width, height) {
     doc.moveTo = () => null;
     doc.arc(C.x, C.y, r, a1, a2, ccw);
     doc.moveTo = moveTo;
-
-    px = T2.x;
-    py = T2.y;
   };
 
 
   this.closePath = function () {
     doc.closePath();
-    nextLineToIsMoveTo = false;
   };
 
   this.stroke = function () {
@@ -438,14 +459,10 @@ const PdfContext = function(stream, width, height) {
 
   this.bezierCurveTo = function (cp1x, cp1y, cp2x, cp2y, x, y) {
     doc.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
-    px = x;
-    py = y;
   };
 
   this.quadraticCurveTo = function (cpx, cpy, x, y) {
     doc.quadraticCurveTo(cpx, cpy, x, y);
-    px = x;
-    py = y;
   };
 
   this.createLinearGradient = function (x1, y1, x2, y2) {
@@ -625,6 +642,7 @@ const PdfContext = function(stream, width, height) {
     console.log("globalCompositeOperation not implemented");
   };
 
+  aop.wrapFunctions(this);
 };
 
 export default PdfContext;
