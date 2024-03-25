@@ -262,13 +262,14 @@ const PdfContext = function(stream, width, height) {
   const aop = createAOP();
   const { advice, state } = aop;
   
-  advice('debug', (before, after) => {
-    before('all', (fname, ...args) => {
-      console.log(`${fname}(${Array.from(args)})`);
-    });
+  advice('debug', ({ beforeAll }) => {
+    beforeAll((fname, ...args) => console.log(`${fname}(${Array.from(args)})`));
   });
 
-  advice('point', (before, after) => {
+  /**
+   * Remember the point where calls to various drawing methods end up.
+   */
+  advice('point', ({ before, after }) => {
     const state = { px: 0, py: 0 };
     const saveCoords = (fname, x, y) => {
       state.px = x;
@@ -283,25 +284,51 @@ const PdfContext = function(stream, width, height) {
    * Sometimes cy.js calls beginPath() and then immediatley calls lineTo() which doesn't work with pdfkit.
    * Need to translate the the 'first' call to lineTo() into a call to moveTo().
    */
-  advice('nextLineToIsMoveTo', (before, after) => {
-    const state = { nextLineToIsMoveTo: false };
+  advice('moveTo', ({ before, after }) => {
+    const state = { moveTo: false };
     before('beginPath', () => {
-      state.nextLineToIsMoveTo = true;
+      state.moveTo = true;
     });
     after(['lineTo', 'moveTo', 'arcTo', 'closePath'], () => {
-      state.nextLineToIsMoveTo = false;
+      state.moveTo = false;
     });
     return state;
   });
 
+  /**
+   * The PDF spec does not support calling fill() and then stroke().
+   * We need to translate those two calls into one call to fillAndStroke().
+   */
+  advice('fillAndStroke', ({ before, beforeAllExcept, afterAllExcept }) => {
+    const state = { fillCalled: false };
+    before('fill', () => {
+      state.fillCalled = true;
+    });
+    before('stroke', () => {
+      if(state.fillCalled) {
+        doc.fillAndStroke();
+      } else {
+        doc.stroke();
+      }
+    });
+    beforeAllExcept(['stroke','fill'], () => {
+      if(state.fillCalled) {
+        doc.fill();
+      }
+    });
+    afterAllExcept('fill', () => {
+      state.fillCalled = false;
+    });
+  });
+
 
   this.beginPath = function () {
-    // no-op
+    // see 'nextLineToIsMoveTo' advice above
   };
 
   this.lineTo = function (x, y) {
-    const { nextLineToIsMoveTo } = state('nextLineToIsMoveTo');
-    if(nextLineToIsMoveTo) {
+    const { moveTo } = state('moveTo');
+    if(moveTo) {
       doc.moveTo(x, y);
     } else {
       doc.lineTo(x, y);
@@ -340,11 +367,11 @@ const PdfContext = function(stream, width, height) {
   };
 
   this.stroke = function () {
-    doc.stroke();
+    // see 'fillAndStroke' advice above
   };
 
   this.fill = function (...args) {
-    doc.fill(...args);
+    // see 'fillAndStroke' advice above
   };
 
   this.ellipse = function (...args) {
