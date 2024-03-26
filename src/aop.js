@@ -2,18 +2,18 @@
 
 function createAdviceMap() {
   const map = new Map();
+
   map.add = (key, val) => {
-    if(map.has(key)) {
-      map.get(key).push(val);
-    } else {
-      map.set(key, [val]);
-    }
-  };
-  map.getDef = (key) => {
     if(map.has(key))
-      return map.get(key);
-    return [];
+      map.get(key).push(val);
+    else
+      map.set(key, [val]);
+  };
+
+  map.getDef = (key) => {
+    return map.has(key) ? map.get(key) : [];
   }
+
   return map;
 }
 
@@ -43,7 +43,7 @@ export function createAOP() {
     });
   };
 
-  const adviceCallbacks = {
+  const callbacks = {
     before: (names, f) => setAdvice(names, beforeAdvice, f),
     after:  (names, f) => setAdvice(names, afterAdvice,  f),
     beforeAll: (f) => setAdvice(allNames, beforeAdvice, f),
@@ -70,7 +70,6 @@ export function createAOP() {
 
         obj[fname] = function(...args) {
           before.forEach(f => f(fname, ...args));
-          console.log("calling " + fname);
           const rv = f.call(obj, ...args);
           after.slice().reverse().forEach(f => f(fname, ...args));
           return rv;
@@ -81,7 +80,7 @@ export function createAOP() {
   };
   
   const advice = (stateName, f) => {
-    const rv = f(adviceCallbacks);
+    const rv = f(callbacks);
     stateMap.set(stateName, rv);
   };
   

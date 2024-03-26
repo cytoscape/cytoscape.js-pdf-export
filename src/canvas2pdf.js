@@ -224,41 +224,8 @@ const PdfContext = function(stream, width, height) {
     },
   });
 
-  this.background = function (bg) {
-    doc.rect(0, 0, doc.page.width, doc.page.height).fill(bg);
-  }
 
-  this.end = function () {
-    doc.end();
-  };
-
-  this.save = function () {
-    doc.save();
-  };
-
-  this.restore = function () {
-    doc.restore();
-  };
-
-  this.scale = function (x, y) {
-    doc.scale(x, y);
-  };
-
-  this.rotate = function (angle) {
-    const degrees = (angle * 180) / Math.PI;
-    doc.rotate(degrees);
-  };
-
-  this.translate = function (x, y) {
-    doc.translate(x, y);
-  };
-
-  this.transform = function (a, b, c, d, e, f) {
-    doc.transform(a, b, c, d, e, f);
-  };
-
-
-  // Define "advice" for functions
+  // Define "advice" that wraps functions
   const aop = createAOP();
   const { advice, state } = aop;
   
@@ -322,8 +289,41 @@ const PdfContext = function(stream, width, height) {
   });
 
 
+  this.background = function (bg) {
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill(bg);
+  }
+
+  this.end = function () {
+    doc.end();
+  };
+
+  this.save = function () {
+    doc.save();
+  };
+
+  this.restore = function () {
+    doc.restore();
+  };
+
+  this.scale = function (x, y) {
+    doc.scale(x, y);
+  };
+
+  this.rotate = function (angle) {
+    const degrees = (angle * 180) / Math.PI;
+    doc.rotate(degrees);
+  };
+
+  this.translate = function (x, y) {
+    doc.translate(x, y);
+  };
+
+  this.transform = function (a, b, c, d, e, f) {
+    doc.transform(a, b, c, d, e, f);
+  };
+
   this.beginPath = function () {
-    // see 'nextLineToIsMoveTo' advice above
+    // see 'moveTo' advice above
   };
 
   this.lineTo = function (x, y) {
@@ -429,57 +429,23 @@ const PdfContext = function(stream, width, height) {
     // else if (Math.abs(this._x1 - x0) > epsilon || Math.abs(this._y1 - y0) > epsilon) {
     //   cmd += 'L' + x0 + ',' + y0;
     // }
-
     // Is this arc empty? We’re done.
     if (!r) {
       return;
     }
-
     // Does the angle go the wrong way? Flip the direction.
     if (da < 0) {
       da = (da % tau) + tau;
     }
-
     // Is this a complete circle? Draw two arcs to complete the circle.
     if (da > tauEpsilon) {
-      cmd +=
-        "A" +
-        r +
-        "," +
-        r +
-        ",0,1," +
-        cw +
-        "," +
-        (x - dx) +
-        "," +
-        (y - dy) +
-        "A" +
-        r +
-        "," +
-        r +
-        ",0,1," +
-        cw +
-        "," +
-        x0 +
-        "," +
-        y0;
+      cmd += "A" + r +  "," + r + ",0,1," + cw + "," + (x - dx) + "," + (y - dy) + "A" +
+             r + "," + r +  ",0,1," + cw + "," + x0 + "," + y0;
     }
-
     // Is this arc non-empty? Draw an arc!
     else if (da > epsilon) {
-      cmd +=
-        "A" +
-        r +
-        "," +
-        r +
-        ",0," +
-        +(da >= pi) +
-        "," +
-        cw +
-        "," +
-        (x + r * Math.cos(a1)) +
-        "," +
-        (y + r * Math.sin(a1));
+      cmd += "A" + r + "," + r + ",0," + +(da >= pi) + "," + cw + "," +
+             (x + r * Math.cos(a1)) + "," + (y + r * Math.sin(a1));
     }
     doc.path(cmd);
   };
