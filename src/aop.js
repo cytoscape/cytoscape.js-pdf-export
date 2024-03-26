@@ -27,6 +27,15 @@ function minus(allNames, names) {
   return allNames.filter(n => !namesArray.includes(n));
 }
 
+function isFunction(obj, fname) {
+  return !isAccessor(obj, fname) && typeof obj[fname] === 'function';
+}
+
+function isAccessor(obj, fname) {
+  const desc = Object.getOwnPropertyDescriptor(obj, fname);
+  return desc && desc.configurable && 'get' in desc && 'set' in desc;
+}
+
 
 export function createAOP() {
   const beforeAdvice = createAdviceMap();
@@ -53,28 +62,51 @@ export function createAOP() {
   }
 
   const wrapFunctions = (obj) => {  // call at end
-    for(let fname in obj) {
-      if(typeof obj[fname] === 'function') {
+    // we have to defer setting the advice on functions until after we know the function names
+    for(const fname in obj) {
+      if(isFunction(obj, fname) || isAccessor(obj, fname)) {
         allNames.push(fname);
       }
     }
 
-    // we have to defer setting the advice on functions until after we know the function names
     deferredAdviceSetters.forEach(f => f());
 
-    for(let fname in obj) {
-      if(typeof obj[fname] === 'function') {
+    for(const fname in obj) {
+      const before = beforeAdvice.getDef(fname);
+      const after  = afterAdvice .getDef(fname);
+      const runBefore = (fname, ...args) => before.forEach(f => f(fname, ...args));
+      const runAfter  = (fname, ...args) => after.slice().reverse().forEach(f => f(fname, ...args));
+
+      if(isFunction(obj, fname)) {
         const f = obj[fname];
-        const before = beforeAdvice.getDef(fname);
-        const after  = afterAdvice.getDef(fname);
 
         obj[fname] = function(...args) {
-          before.forEach(f => f(fname, ...args));
+          runBefore(fname, ...args);
           const rv = f.call(obj, ...args);
-          after.slice().reverse().forEach(f => f(fname, ...args));
+          runAfter(fname, ...args);
           return rv;
         };
+      } 
+      else if(isAccessor(obj, fname)) {
+        const desc = Object.getOwnPropertyDescriptor(obj, fname);
+        const getter = desc.get;
+        const setter = desc.set;
 
+        Object.defineProperty(obj, fname, {
+          ...desc,
+          get: function () {
+            runBefore(fname);
+            const rv = getter.call(obj);
+            runAfter(fname);
+            return rv;
+          },
+          set: function(value) {
+            runBefore(fname, value);
+            const rv = setter.call(obj, value);
+            runAfter(fname, value);
+            return rv;
+          },
+        });
       }
     }
   };

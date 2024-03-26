@@ -143,8 +143,8 @@ const PdfContext = function(stream, width, height) {
     return data;
   };
 
-
-  Object.defineProperty(this, "fillStyle", {
+  const propProps = { enumerable: true, configurable: true };
+  Object.defineProperty(this, "fillStyle", { ...propProps,
     get: function () {
       return doc.fillColor();
     },
@@ -153,7 +153,7 @@ const PdfContext = function(stream, width, height) {
       doc.fillColor(color.c, color.a);
     },
   });
-  Object.defineProperty(this, "strokeStyle", {
+  Object.defineProperty(this, "strokeStyle", { ...propProps,
     get: function () {
       return doc.strokeColor();
     },
@@ -162,7 +162,7 @@ const PdfContext = function(stream, width, height) {
       doc.strokeColor(color.c, color.a);
     },
   });
-  Object.defineProperty(this, "lineWidth", {
+  Object.defineProperty(this, "lineWidth", { ...propProps,
     get: function () {
       return doc.lineWidth();
     },
@@ -171,7 +171,7 @@ const PdfContext = function(stream, width, height) {
     },
   });
 
-  Object.defineProperty(this, "lineCap", {
+  Object.defineProperty(this, "lineCap", { ...propProps,
     get: function () {
       return doc.lineCap();
     },
@@ -179,7 +179,7 @@ const PdfContext = function(stream, width, height) {
       doc.lineCap(value);
     },
   });
-  Object.defineProperty(this, "lineJoin", {
+  Object.defineProperty(this, "lineJoin", { ...propProps,
     get: function () {
       return doc.lineJoin();
     },
@@ -187,7 +187,7 @@ const PdfContext = function(stream, width, height) {
       doc.lineJoin(value);
     },
   });
-  Object.defineProperty(this, "globalAlpha", {
+  Object.defineProperty(this, "globalAlpha", { ...propProps,
     get: function () {
       return doc.opacity();
     },
@@ -195,7 +195,7 @@ const PdfContext = function(stream, width, height) {
       value >= 0.0 && value <= 1.0 && doc.opacity(value);
     },
   });
-  Object.defineProperty(this, "font", {
+  Object.defineProperty(this, "font", { ...propProps,
     get: function () {
       return fontValue;
     },
@@ -207,7 +207,7 @@ const PdfContext = function(stream, width, height) {
       lineHeight = doc.currentLineHeight(false);
     },
   });
-  Object.defineProperty(this, "textBaseline", {
+  Object.defineProperty(this, "textBaseline", { ...propProps,
     get: function () {
       return textBaseline;
     },
@@ -215,7 +215,7 @@ const PdfContext = function(stream, width, height) {
       textBaseline = value;
     },
   });
-  Object.defineProperty(this, "textAlign", {
+  Object.defineProperty(this, "textAlign", { ...propProps,
     get: function () {
       return textAlign;
     },
