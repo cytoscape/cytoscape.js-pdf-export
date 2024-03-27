@@ -5,14 +5,6 @@ import { createAOP } from "./aop";
 /*
  *
  *  A canvas to PDF converter. Uses a mock canvas context to build a PDF document.
- *
- *  Licensed under the MIT license:
- *  http://www.opensource.org/licenses/mit-license.php
- *
- *  Author:
- *  Joshua Gould
- *
- *  Copyright (c) 2017 Joshua Gould
  */
 
 function hex(v) {
@@ -94,6 +86,7 @@ const fixColor = function (value) {
     return { c: value, a: 1 };
   }
 };
+
 /**
  *
  * @param stream Stream to write the PDF to.
@@ -113,12 +106,12 @@ const PdfContext = function(stream, width, height) {
     size: [width, height]
   });
 
+  console.log(doc);
+
   this.doc = doc; // For debug
   this.stream = doc.pipe(stream);
+
   let fontValue = "10px Helvetica";
-  let textAlign = "left";
-  let textBaseline = "alphabetic";
-  let lineHeight = doc.currentLineHeight(false);
   let font = fontValue;
 
   const fontRegex =
@@ -144,61 +137,11 @@ const PdfContext = function(stream, width, height) {
   };
 
   const propProps = { enumerable: true, configurable: true };
-  Object.defineProperty(this, "fillStyle", { ...propProps,
-    get: function () {
-      return doc.fillColor();
-    },
-    set: function (value) {
-      const color = fixColor(value);
-      doc.fillColor(color.c, color.a);
-    },
-  });
-  Object.defineProperty(this, "strokeStyle", { ...propProps,
-    get: function () {
-      return doc.strokeColor();
-    },
-    set: function (value) {
-      const color = fixColor(value);
-      doc.strokeColor(color.c, color.a);
-    },
-  });
-  Object.defineProperty(this, "lineWidth", { ...propProps,
-    get: function () {
-      return doc.lineWidth();
-    },
-    set: function (value) {
-      doc.lineWidth(value);
-    },
-  });
 
-  Object.defineProperty(this, "lineCap", { ...propProps,
-    get: function () {
-      return doc.lineCap();
-    },
-    set: function (value) {
-      doc.lineCap(value);
-    },
-  });
-  Object.defineProperty(this, "lineJoin", { ...propProps,
-    get: function () {
-      return doc.lineJoin();
-    },
-    set: function (value) {
-      doc.lineJoin(value);
-    },
-  });
-  Object.defineProperty(this, "globalAlpha", { ...propProps,
-    get: function () {
-      return doc.opacity();
-    },
-    set: function (value) {
-      value >= 0.0 && value <= 1.0 && doc.opacity(value);
-    },
-  });
+  // We have to remember the values of these properties, pdfkit doesn't have getters for these.
+  let lineHeight = doc.currentLineHeight(false);
   Object.defineProperty(this, "font", { ...propProps,
-    get: function () {
-      return fontValue;
-    },
+    get: function () { return fontValue; },
     set: function (value) {
       fontValue = value;
       const parsedFont = parseFont(value);
@@ -207,20 +150,72 @@ const PdfContext = function(stream, width, height) {
       lineHeight = doc.currentLineHeight(false);
     },
   });
+  
+  let textBaseline = "alphabetic";
   Object.defineProperty(this, "textBaseline", { ...propProps,
-    get: function () {
-      return textBaseline;
-    },
+    get: function () { return textBaseline; },
+    set: function (value) { textBaseline = value; },
+  });
+
+  let textAlign = "left";
+  Object.defineProperty(this, "textAlign", { ...propProps,
+    get: function () { return textAlign; },
+    set: function (value) { textAlign = value; },
+  });
+
+  let fillStyleVal;
+  Object.defineProperty(this, "fillStyle", { ...propProps,
+    get: function () { return fillStyleVal; },
     set: function (value) {
-      textBaseline = value;
+      fillStyleVal = value;
+      const color = fixColor(value);
+      doc.fillColor(color.c, color.a);
     },
   });
-  Object.defineProperty(this, "textAlign", { ...propProps,
-    get: function () {
-      return textAlign;
-    },
+
+  let strokeStyleVal;
+  Object.defineProperty(this, "strokeStyle", { ...propProps,
+    get: function () { return strokeStyleVal; },
     set: function (value) {
-      textAlign = value;
+      strokeStyleVal = value;
+      const color = fixColor(value);
+      doc.strokeColor(color.c, color.a);
+    },
+  });
+
+  let lineWidthVal;
+  Object.defineProperty(this, "lineWidth", { ...propProps,
+    get: function () { return lineWidthVal; },
+    set: function (value) {
+      lineWidthVal = value;
+      doc.lineWidth(value);
+    },
+  });
+
+  let lineCapVal;
+  Object.defineProperty(this, "lineCap", { ...propProps,
+    get: function () { return lineCapVal; },
+    set: function (value) {
+      lineCapVal = value;
+      doc.lineCap(value);
+    },
+  });
+
+  let lineJoinVal;
+  Object.defineProperty(this, "lineJoin", { ...propProps,
+    get: function () { return lineJoinVal; },
+    set: function (value) {
+      lineJoinVal = value;
+      doc.lineJoin(value);
+    },
+  });
+
+  let globalAlphaVal;
+  Object.defineProperty(this, "globalAlpha", { ...propProps,
+    get: function () { return globalAlphaVal; },
+    set: function (value) {
+      globalAlphaVal = value;
+      value >= 0.0 && value <= 1.0 && doc.opacity(value);
     },
   });
 
@@ -229,12 +224,12 @@ const PdfContext = function(stream, width, height) {
   const aop = createAOP();
   const { advice, state } = aop;
   
-  advice('debug', ({ beforeAll }) => {
+  advice('debug-trace', ({ beforeAll }) => {
     beforeAll((fname, ...args) => console.log(`${fname}(${Array.from(args)})`));
   });
 
   /**
-   * Remember the point where calls to various drawing methods end up.
+   * Remember the x/y point where calls to various drawing methods end up.
    */
   advice('point', ({ before, after }) => {
     const state = { px: 0, py: 0 };
@@ -278,12 +273,12 @@ const PdfContext = function(stream, width, height) {
         doc.stroke();
       }
     });
-    beforeAllExcept(['stroke','fill'], () => {
+    beforeAllExcept(['stroke','fill','strokeStyle','lineWidth','lineCap'], () => {
       if(state.fillCalled) {
         doc.fill();
       }
     });
-    afterAllExcept('fill', () => {
+    afterAllExcept(['stroke','fill','strokeStyle','lineWidth','lineCap'], () => {
       state.fillCalled = false;
     });
   });
@@ -327,6 +322,8 @@ const PdfContext = function(stream, width, height) {
   };
 
   this.lineTo = function (x, y) {
+    if(isNaN(x) || isNaN(y))
+      return;
     const { moveTo } = state('moveTo');
     if(moveTo) {
       doc.moveTo(x, y);
@@ -337,6 +334,8 @@ const PdfContext = function(stream, width, height) {
 
 
   this.moveTo = function (x, y) {
+    if(isNaN(x) || isNaN(y))
+      return;
     doc.moveTo(x, y);
   };
 

@@ -18,8 +18,8 @@ function createAdviceMap() {
 }
 
 
-function array(x) {
-  return Array.isArray(x) ? x : [x];
+function array(names) {
+  return Array.isArray(names) ? names : [names];
 }
 
 function minus(allNames, names) {
