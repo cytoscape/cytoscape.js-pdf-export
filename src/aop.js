@@ -19,7 +19,9 @@ function createAdviceMap() {
 
 
 function array(names) {
-  return Array.isArray(names) ? names : [names];
+  if(Array.isArray(names))
+    return names;
+  return names.split(' ').filter(s => s.length > 0);
 }
 
 function minus(allNames, names) {

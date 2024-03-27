@@ -237,8 +237,8 @@ const PdfContext = function(stream, width, height) {
       state.px = x;
       state.py = y;
     };
-    before(['lineTo', 'moveTo'], saveCoords);
-    after(['arcTo', 'bezierCurveTo', 'quadraticCurveTo'], saveCoords);
+    before('lineTo moveTo', saveCoords);
+    after('arcTo bezierCurveTo quadraticCurveTo', saveCoords);
     return state;
   });
 
@@ -251,7 +251,7 @@ const PdfContext = function(stream, width, height) {
     before('beginPath', () => {
       state.moveTo = true;
     });
-    after(['lineTo', 'moveTo', 'arcTo', 'closePath'], () => {
+    after('lineTo moveTo arcTo closePath', () => {
       state.moveTo = false;
     });
     return state;
@@ -262,24 +262,22 @@ const PdfContext = function(stream, width, height) {
    * We need to translate those two calls into one call to fillAndStroke().
    */
   advice('fillAndStroke', ({ before, beforeAllExcept, afterAllExcept }) => {
-    const state = { fillCalled: false };
+    let fillCalled = false;
     before('fill', () => {
-      state.fillCalled = true;
+      fillCalled = true;
     });
     before('stroke', () => {
-      if(state.fillCalled) {
+      if(fillCalled)
         doc.fillAndStroke();
-      } else {
+      else
         doc.stroke();
-      }
     });
-    beforeAllExcept(['stroke','fill','strokeStyle','lineWidth','lineCap'], () => {
-      if(state.fillCalled) {
+    beforeAllExcept('stroke fill strokeStyle lineWidth lineCap', () => {
+      if(fillCalled)
         doc.fill();
-      }
     });
-    afterAllExcept(['stroke','fill','strokeStyle','lineWidth','lineCap'], () => {
-      state.fillCalled = false;
+    afterAllExcept('fill strokeStyle lineWidth lineCap', () => {
+      fillCalled = false;
     });
   });
 
