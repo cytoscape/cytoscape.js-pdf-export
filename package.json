@@ -8,6 +8,7 @@
     "pdfkit": "webpack --mode production --config webpack.pdfkit.config.js",
     "prod": "webpack --mode production"
   },
+  "main": "dist/cytoscape-pdf-export.js",
   "devDependencies": {
     "brfs": "^2.0.2",
     "html-webpack-plugin": "^5.3.2",
