@@ -10,6 +10,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: pkg.name + '.js',
+    libraryTarget: "commonjs-module",
   },
   plugins: [
     // new HtmlWebpackPlugin({
