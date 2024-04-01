@@ -16,6 +16,6 @@
   });
 
   cy.ready(() => {
-    window.pdf = () => cy.pdf();
+    window.pdf = () => cy.pdf({ save: true });
   });
 })();

@@ -1,13 +1,13 @@
 import PDFDocument from "pdfkit";
 import PdfContext from "./canvas2pdf";
+import { color2tuple } from './colors';
 import blobStream from "blob-stream";
-import saveAs from "file-saver";
-
+import saveAs from "file-saver"; // TODO remove this dependency???
 import './pdfkit-virtual-files.js';  // https://github.com/blikblum/pdfkit-webpack-example/issues/1
+
 
 /**
  * PDF export cytoscape.js extension.
- * 
  */
 export default function register(cytoscape) {
   if(!cytoscape) { return; }
@@ -18,18 +18,27 @@ if(typeof cytoscape !== 'undefined') { // expose to global cytoscape (i.e. windo
   register(cytoscape);
 }
 
-// Housekeeping to make pdfkit happy
+// housekeeping to make pdfkit happy
 window.PDFDocument = PDFDocument;
 window.blobStream = blobStream;
 
 
-export function pdfExport(options) {
+export const defaultOptions = {
+  save: false,
+  fileName: 'cytoscape.pdf',
+  includeSvgLayers: false,
+};
+
+export async function pdfExport(options) {
+  options = { ...defaultOptions, ...options };
   const cy = this;
-  // Temporary, the calling code should do the saveAs(...)
-  drawCanvasImage(cy, {
-    onFinish: blob => saveAs(blob, "example.pdf", true),
-    ...options
-  });
+
+  const blob = await drawCanvasImage(cy, options);
+  if(options.save) {
+    saveAs(blob, options.fileName, true);
+  } else {
+    return blob;
+  }
 }
 
 
@@ -53,9 +62,6 @@ function drawCanvasImage(cy, options) {
 
   const stream = blobStream();
   const ctx = new PdfContext(stream, width, height);
-
-  // for debg
-  // wrapObjectFunctions(ctx, (name, obj, args) => console.log(`${name}(${Array.from(args)})`));
 
   if(options.bg) {
     ctx.background(options.bg);
@@ -82,22 +88,34 @@ function drawCanvasImage(cy, options) {
     ctx.translate(translation.x, translation.y);
     ctx.scale(scale, scale);
 
-    renderer.drawElements(ctx, zsortedEles);
+    if(options.includeSvgLayers) {
+      const svgLayers = getSvgLayers(cy);
+      drawSvgLayers(ctx, svgLayers.bg);
+      renderer.drawElements(ctx, zsortedEles);
+      drawSvgLayers(ctx, svgLayers.fg);
+    } else {
+      renderer.drawElements(ctx, zsortedEles);
+    }
 
     ctx.scale(1/scale, 1/scale);
     ctx.translate(-translation.x, -translation.y);
   }
 
-  if(options.onFinish) {
-    ctx.stream.on('finish', () => {
-      const blob = ctx.stream.toBlob("application/pdf");
-      options.onFinish(blob);
-    });
-  }
+  const p = new Promise((resolve, reject) => {
+    try {
+      ctx.stream.on('finish', () => {
+        const blob = ctx.stream.toBlob("application/pdf");
+        resolve(blob);
+      });
+    } catch(err) {
+      reject(err);
+    }
+  });
 
   ctx.end();
-
   renderer.path2dEnabled(path2dEnabled);
+
+  return p;
 };
 
 
@@ -105,30 +123,87 @@ function isNumber(obj) {
   return obj != null && typeof obj === typeof 1 && !isNaN(obj);
 }
 
+function isTag(ele, tagName) {
+  return ele.tagName && ele.tagName.toLowerCase() === tagName.toLowerCase();
+}
 
-// /**
-//  * For debug
-//  */
-// function wrapObjectFunctions(obj, before, after) {
-//   var key, value;
 
-//   for (key in obj) {
-//     value = obj[key];
-//     if (typeof value === "function") {
-//       wrapFunction(obj, key, value);
-//     }
-//   }
+function getSvgLayers(cy) {
+  const bgLayers = [];
+  const fgLayers = [];
+  const containerDiv = cy.container().children[0];
+  if(isTag(containerDiv, 'div')) {
+    let bg = true;
+    for(const layer of containerDiv.children) {
+      if(isTag(layer, 'svg')) {
+        (bg ? bgLayers : fgLayers).push(layer);
+      } else if(isTag(layer, 'canvas')) {
+        bg = false;
+      }
+    }
+  }
+  return {
+    bg: bgLayers,
+    fg: fgLayers
+  }
+}
 
-//   function wrapFunction(obj, fname, f) {
-//     obj[fname] = function() {
-//       if (before) {
-//         before(fname, this, arguments);
-//       }
-//       let rv = f.apply(this, arguments); // Calls the original
-//       if (after) {
-//         after(fname, this, arguments, rv);
-//       }
-//       return rv;
-//     };
-// //   }
-// }
+
+function drawSvgLayers(ctx, svgElements) {
+  for(const svg of svgElements) {
+    const gs = svg.getElementsByTagName('g');
+    for(const g of gs) {
+      const paths = g.getElementsByTagName('path');
+      for(const path of paths) {
+        drawSvgPath(ctx, path);
+      }
+    }
+  }
+}
+
+
+function drawSvgPath(ctx, path) {
+  const pdfDoc = ctx.doc;
+
+  const setColor = (val, rgbcb, alphacb) => {
+    if(typeof val === 'string') {
+      const tuple = color2tuple(val);
+      if(tuple) {
+        const rgb = tuple.slice(0, 3);
+        const a = tuple[3];
+        rgbcb(rgb);
+        if(typeof a !== 'undefined') {
+          alphacb(a);
+        }
+      }
+    }
+  };
+
+  const setNum = (val, cb) => {
+    const num = Number(val);
+    if(!isNaN(num)) {
+      cb(num);
+    }
+  };
+
+  const { style } = path;
+  if(style) {
+    setColor(style.fill, 
+      rgb => pdfDoc.fillColor(rgb),
+      a   => pdfDoc.fillOpacity(a)
+    );
+    setColor(style.stroke, 
+      rgb => pdfDoc.strokeColor(rgb),
+      a   => pdfDoc.strokeOpacity(a)
+    );
+    setNum(style.strokeWidth, 
+      w => pdfDoc.lineWidth(w)
+    );
+  }
+  
+  const svgPathStr = path.getAttribute('d');
+
+  pdfDoc.path(svgPathStr);
+  pdfDoc.fillAndStroke();
+}
+

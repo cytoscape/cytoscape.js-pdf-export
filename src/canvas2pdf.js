@@ -108,7 +108,7 @@ const PdfContext = function(stream, width, height) {
 
   console.log(doc);
 
-  this.doc = doc; // For debug
+  this.doc = doc;
   this.stream = doc.pipe(stream);
 
   let fontValue = "10px Helvetica";
@@ -224,9 +224,9 @@ const PdfContext = function(stream, width, height) {
   const aop = createAOP();
   const { advice, state } = aop;
   
-  advice('debug-trace', ({ beforeAll }) => {
-    beforeAll((fname, ...args) => console.log(`${fname}(${Array.from(args)})`));
-  });
+  // advice('debug-trace', ({ beforeAll }) => {
+  //   beforeAll((fname, ...args) => console.log(`${fname}(${Array.from(args)})`));
+  // });
 
   /**
    * Remember the x/y point where calls to various drawing methods end up.
