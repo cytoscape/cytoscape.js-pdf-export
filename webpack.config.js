@@ -5,13 +5,8 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 // most of the config is for pdfkit (https://github.com/foliojs/pdfkit/tree/master/examples/webpack)
 
-module.exports = {
+const baseConfig = {
   entry: path.resolve(__dirname, 'src/pdf-export.js'),
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: pkg.name + '.js',
-    libraryTarget: "commonjs-module",
-  },
   plugins: [
     // new HtmlWebpackPlugin({
     //   template: path.resolve(__dirname, 'src/index.html')
@@ -63,3 +58,22 @@ module.exports = {
     ]
   }
 };
+
+const normal = {
+  ...baseConfig,
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: pkg.name + '.js',
+  },
+};
+
+const commonjs = {
+  ...baseConfig,
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: pkg.name + '-cjs.js',
+    libraryTarget: 'commonjs-module',
+  },
+};
+
+module.exports = [normal, commonjs];
