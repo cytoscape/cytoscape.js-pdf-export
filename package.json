@@ -1,6 +1,6 @@
 {
   "name": "cytoscape-pdf-export",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Export cytoscape.js networks to PDF",
 
   "scripts": {
