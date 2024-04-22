@@ -219,14 +219,26 @@ const PdfContext = function(stream, width, height) {
     },
   });
 
+  // Debug tracing for calls to the PDFDocument API
+  const pdfkitAop = createAOP();
+  pdfkitAop.advice('debug-trace', ({ beforeAll }) => {
+    beforeAll((fname, ...args) => {
+      if(fname[0] !== '_' && !['emit','read','begin','push','removeListener'].includes(fname)) {
+        const printArgs = Array.from(args).map(a => (typeof a === 'string') ? a.slice(0, 100) : a);
+        console.log(`... ${fname}(${printArgs})`);
+      }
+    });
+  });
+  pdfkitAop.wrapFunctions(doc);
 
   // Define "advice" that wraps functions
   const aop = createAOP();
   const { advice, state } = aop;
-  
-  // advice('debug-trace', ({ beforeAll }) => {
-  //   beforeAll((fname, ...args) => console.log(`${fname}(${Array.from(args)})`));
-  // });
+
+  // Debug tracing for calls to the Canvas API
+  advice('debug-trace', ({ beforeAll }) => {
+    beforeAll((fname, ...args) => console.log(`${fname}(${Array.from(args)})`));
+  });
 
   /**
    * Remember the x/y point where calls to various drawing methods end up.
@@ -524,6 +536,8 @@ const PdfContext = function(stream, width, height) {
   };
 
   this.drawImage = function (image) {
+    // drawImage([object HTMLImageElement],0,0,1024,768,-53.333333333333314,-40,106.66666666666667,80)
+
     const args = Array.prototype.slice.call(arguments);
     image = args[0];
     let dx,
@@ -548,7 +562,7 @@ const PdfContext = function(stream, width, height) {
       dh = args[4];
       sw = image.width;
       sh = image.height;
-    } else if (args.length === 9) {
+    } else if (args.length === 9) { // here
       sx = args[1];
       sy = args[2];
       sw = args[3];
@@ -558,12 +572,11 @@ const PdfContext = function(stream, width, height) {
       dw = args[7];
       dh = args[8];
     } else {
-      throw new Error(
-        "Invalid number of arguments passed to drawImage: " + arguments.length,
-      );
+      throw new Error("Invalid number of arguments passed to drawImage: " + arguments.length);
     }
 
     if (image.nodeName === "IMG") {
+      console.log("HERE IMG");
       const canvas = document.createElement("canvas");
       canvas.width = image.width;
       canvas.height = image.height;

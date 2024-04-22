@@ -16,10 +16,13 @@ export function pdf() {
     .lineTo(100, 250)
     .lineTo(200, 250)
     .closePath()
-    .fill('#FF3300')
-    .stroke()
+    .fillColor('#999999',1)
+    .fillOpacity(1)
+    .strokeColor('#ff0000',0.5)
+    .strokeOpacity(0.5)
+    .lineWidth(3)
+    .fillAndStroke()
   ;
-    // .fill('#FF3300');
 
   stream.on('finish', () => {
     const blob = stream.toBlob("application/pdf");

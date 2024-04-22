@@ -67,6 +67,13 @@ function drawCanvasImage(cy, options) {
     ctx.background(options.bg);
   }
 
+  // console.log(cy.elements());
+  const allEles = cy.elements();
+  allEles.dirtyBoundingBoxCache();
+  allEles.dirtyCompoundBoundsCache();
+  allEles.dirtyStyleCache();
+  allEles.removeRscratch('pathCache'); // Cached Path2D objects are used for clipping, pdfkit doesn't support that.
+
   // pdfkit doesn't support Path2D
   const path2dEnabled = renderer.path2dEnabled();
   renderer.path2dEnabled(false);
