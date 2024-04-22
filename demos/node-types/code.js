@@ -12,7 +12,7 @@
 
     style: fetch('cy-style.json').then(toJson),
 
-    elements: fetch('data.json').then(toJson)
+    elements: fetch('data-2.json').then(toJson)
   });
 
   cy.ready(() => {

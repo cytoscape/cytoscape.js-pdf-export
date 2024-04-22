@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import PdfContext from "./canvas2pdf";
+import { EventBuffer } from "./eventBuffer.js";
 import { color2tuple } from './colors';
 import blobStream from "blob-stream";
 import saveAs from "file-saver"; // TODO remove this dependency???
@@ -43,6 +44,28 @@ export async function pdfExport(options) {
 
 
 /**
+ * Prepare the renderer for drawing to PDF.
+ */
+function initRenderer(renderer) {
+  // Some caches need to be cleared.
+  const allEles = cy.elements();
+  allEles.dirtyBoundingBoxCache();
+  allEles.dirtyCompoundBoundsCache();
+  allEles.dirtyStyleCache();
+  // Cached Path2D objects are used for clipping, pdfkit doesn't support that.
+  allEles.removeRscratch('pathCache'); 
+
+  // pdfkit doesn't support Path2D
+  const path2dEnabled = renderer.path2dEnabled();
+  renderer.path2dEnabled(false);
+
+  return () => {
+    renderer.path2dEnabled(path2dEnabled);
+  };
+}
+
+
+/**
  * Draw on the PDFCanvas
  */
 function drawCanvasImage(cy, options) {
@@ -60,53 +83,53 @@ function drawCanvasImage(cy, options) {
     return;
   }
 
-  const stream = blobStream();
-  const ctx = new PdfContext(stream, width, height);
+  // Record the calls to the canvas API, but don't actually draw anything yet.
+  const eventBuffer = EventBuffer();
+  const proxy = eventBuffer.proxy;
 
-  if(options.bg) {
-    ctx.background(options.bg);
-  }
-
-  // console.log(cy.elements());
-  const allEles = cy.elements();
-  allEles.dirtyBoundingBoxCache();
-  allEles.dirtyCompoundBoundsCache();
-  allEles.dirtyStyleCache();
-  allEles.removeRscratch('pathCache'); // Cached Path2D objects are used for clipping, pdfkit doesn't support that.
-
-  // pdfkit doesn't support Path2D
-  const path2dEnabled = renderer.path2dEnabled();
-  renderer.path2dEnabled(false);
-
+  const restoreRenderer = initRenderer(renderer);
   const zsortedEles = renderer.getCachedZSortedEles();
 
   if(options.full) {
     // TODO
   } else {
     var pan = cy.pan();
-
-    var translation = {
-      x: pan.x * scale,
-      y: pan.y * scale
-    };
-
+    var translation = { x: pan.x * scale, y: pan.y * scale };
     scale *= cy.zoom();
 
-    ctx.translate(translation.x, translation.y);
-    ctx.scale(scale, scale);
+    if(options.bg) {
+      proxy.background(options.bg);
+    }
+    proxy.translate(translation.x, translation.y);
+    proxy.scale(scale, scale);
 
     if(options.includeSvgLayers) {
-      const svgLayers = getSvgLayers(cy);
-      drawSvgLayers(ctx, svgLayers.bg);
-      renderer.drawElements(ctx, zsortedEles);
-      drawSvgLayers(ctx, svgLayers.fg);
+      // const svgLayers = getSvgLayers(cy);
+      // drawSvgLayers(ctx, svgLayers.bg);
+      // renderer.drawElements(ctx, zsortedEles);
+      // drawSvgLayers(ctx, svgLayers.fg);
     } else {
-      renderer.drawElements(ctx, zsortedEles);
+      renderer.drawElements(proxy, zsortedEles);
     }
 
-    ctx.scale(1/scale, 1/scale);
-    ctx.translate(-translation.x, -translation.y);
+    proxy.scale(1/scale, 1/scale);
+    proxy.translate(-translation.x, -translation.y);
   }
+
+  proxy.end();
+  restoreRenderer();
+
+  // Convert the drawing commands into PDFKit
+  console.log("Canvas events...")
+  eventBuffer.events.forEach(evt => console.log(evt));
+
+  eventBuffer.convert();
+
+  console.log("PDFKit events...")
+  eventBuffer.events.forEach(evt => console.log(evt));
+
+  const stream = blobStream();
+  const ctx = new PdfContext(stream, width, height);
 
   const p = new Promise((resolve, reject) => {
     try {
@@ -119,8 +142,7 @@ function drawCanvasImage(cy, options) {
     }
   });
 
-  ctx.end();
-  renderer.path2dEnabled(path2dEnabled);
+  eventBuffer.runEvents(ctx);
 
   return p;
 };

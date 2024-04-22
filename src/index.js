@@ -78,6 +78,7 @@ export function canvas2pdf() {
 
 window.pdf = pdf;
 window.canvas2pdf = canvas2pdf;
+window.testProxy = testProxy;
 
 
 // /**
