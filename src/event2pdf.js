@@ -136,6 +136,8 @@ const PdfEventProcessor = function(stream, width, height) {
     return data;
   };
 
+  // Allows properties to be affected by AOP module
+  // TODO remove this?
   const propProps = { enumerable: true, configurable: true };
 
   // We have to remember the values of these properties, pdfkit doesn't have getters for these.
