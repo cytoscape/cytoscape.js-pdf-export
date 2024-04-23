@@ -15,8 +15,14 @@ const canvasProperties = new Set([
 ]);
 
 
-
-export function EventBuffer() {
+/**
+ * Records calls to the canvas API (made by cytoscape.js) and saves 
+ * them as an array of 'event' objects.
+ * 
+ * The array of events can then be converted into a form that can be
+ * used to draw to PDF instead of canvas.
+ */
+export default function CanvasEventBuffer() {
 
   const events = [];
 
@@ -48,7 +54,6 @@ export function EventBuffer() {
     for(const event of events) {
       if(event === null)
         continue;
-      console.log(event);
       if(event.type === 'method') {
         ctx[event.prop](...event.args);
       } else if(event.type === 'set') {
@@ -66,6 +71,10 @@ export function EventBuffer() {
 };
 
 
+/**
+ * Converts cytoscape.js drawing "Events" into a form that is acceptible
+ * for drawing to PDF.
+ */
 function convertEvents(events) {
   let savedPath = [];
   const point = { px: 0, py: 0 };
@@ -111,17 +120,14 @@ function convertEvents(events) {
       const [ x, y ] = event.args;
       point.px = x;
       point.py = y;
-      console.log('saved point 1', point);
     }
     if(event.prop === 'arcTo') {
-      console.log('arcTo adding arguments', point);
       event.args.push(point.px, point.py);
     }
     if(['arcTo', 'bezierCurveTo', 'quadraticCurveTo'].includes(event.prop)) {
       const [ x, y ] = event.args;
       point.px = x;
       point.py = y;
-      console.log('saved point 2', point);
     }
   }
 

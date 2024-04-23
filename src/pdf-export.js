@@ -1,21 +1,23 @@
-import PDFDocument from "pdfkit";
-import PdfContext from "./canvas2pdf";
-import { EventBuffer } from "./eventBuffer.js";
+import CanvasEventBuffer from './canvas2event.js';
+import PdfEventProcessor from './event2pdf.js';
 import { color2tuple } from './colors';
-import blobStream from "blob-stream";
-import saveAs from "file-saver"; // TODO remove this dependency???
+
+import PDFDocument from 'pdfkit';
+import blobStream from 'blob-stream';
+import saveAs from 'file-saver'; // TODO remove this dependency?
 import './pdfkit-virtual-files.js';  // https://github.com/blikblum/pdfkit-webpack-example/issues/1
 
 
 /**
- * PDF export cytoscape.js extension.
+ * Register pdf() function as a cytoscape.js extension.
  */
 export default function register(cytoscape) {
   if(!cytoscape) { return; }
   cytoscape('core', 'pdf', pdfExport);
 };
 
-if(typeof cytoscape !== 'undefined') { // expose to global cytoscape (i.e. window.cytoscape)
+// expose to global cytoscape (i.e. window.cytoscape)
+if(typeof cytoscape !== 'undefined') { 
   register(cytoscape);
 }
 
@@ -24,6 +26,9 @@ window.PDFDocument = PDFDocument;
 window.blobStream = blobStream;
 
 
+/**
+ * Options for the pdf() function.
+ */
 export const defaultOptions = {
   save: false,
   fileName: 'cytoscape.pdf',
@@ -34,7 +39,7 @@ export async function pdfExport(options) {
   options = { ...defaultOptions, ...options };
   const cy = this;
 
-  const blob = await drawCanvasImage(cy, options);
+  const blob = await createPdfBlob(cy, options);
   if(options.save) {
     saveAs(blob, options.fileName, true);
   } else {
@@ -44,7 +49,7 @@ export async function pdfExport(options) {
 
 
 /**
- * Prepare the renderer for drawing to PDF.
+ * Prepare the cytoscape.js canvas renderer for drawing to PDF.
  */
 function initRenderer(renderer) {
   // Some caches need to be cleared.
@@ -66,9 +71,9 @@ function initRenderer(renderer) {
 
 
 /**
- * Draw on the PDFCanvas
+ * Create the PDF.
  */
-function drawCanvasImage(cy, options) {
+function createPdfBlob(cy, options) {
   const renderer = cy.renderer();
   var eles = cy.mutableElements();
   var bb = eles.boundingBox();
@@ -84,7 +89,9 @@ function drawCanvasImage(cy, options) {
   }
 
   // Record the calls to the canvas API, but don't actually draw anything yet.
-  const eventBuffer = EventBuffer();
+  const eventBuffer = CanvasEventBuffer();
+
+  // The proxy is a stand-in for CanvasRenderingContext2D
   const proxy = eventBuffer.proxy;
 
   const restoreRenderer = initRenderer(renderer);
@@ -103,7 +110,7 @@ function drawCanvasImage(cy, options) {
     proxy.translate(translation.x, translation.y);
     proxy.scale(scale, scale);
 
-    if(options.includeSvgLayers) {
+    if(options.includeSvgLayers) { // TODO move this below, should draw svg directly on the pdf document
       // const svgLayers = getSvgLayers(cy);
       // drawSvgLayers(ctx, svgLayers.bg);
       // renderer.drawElements(ctx, zsortedEles);
@@ -119,17 +126,16 @@ function drawCanvasImage(cy, options) {
   proxy.end();
   restoreRenderer();
 
-  // Convert the drawing commands into PDFKit
+  // Convert the canvas API 'events'
   console.log("Canvas events...")
   eventBuffer.events.forEach(evt => console.log(evt));
-
   eventBuffer.convert();
-
-  console.log("PDFKit events...")
+  console.log("PDF events...")
   eventBuffer.events.forEach(evt => console.log(evt));
 
+  // Now draw to the PDF context
   const stream = blobStream();
-  const ctx = new PdfContext(stream, width, height);
+  const ctx = new PdfEventProcessor(stream, width, height);
 
   const p = new Promise((resolve, reject) => {
     try {

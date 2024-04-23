@@ -93,7 +93,7 @@ const fixColor = function (value) {
  * @param options Options passed to PDFDocument constructor.
  * @constructor
  */
-const PdfContext = function(stream, width, height) {
+const PdfEventProcessor = function(stream, width, height) {
   if (stream == null) {
     throw new Error("Stream must be provided.");
   }
@@ -230,68 +230,6 @@ const PdfContext = function(stream, width, height) {
     });
   });
   pdfkitAop.wrapFunctions(doc);
-
-  // Define "advice" that wraps functions
-  const aop = createAOP();
-  const { advice, state } = aop;
-
-  // Debug tracing for calls to the Canvas API
-  advice('debug-trace', ({ beforeAll }) => {
-    beforeAll((fname, ...args) => console.log(`${fname}(${Array.from(args)})`));
-  });
-
-  // /**
-  //  * Remember the x/y point where calls to various drawing methods end up.
-  //  */
-  // advice('point', ({ before, after }) => {
-  //   const state = { px: 0, py: 0 };
-  //   const saveCoords = (fname, x, y) => {
-  //     state.px = x;
-  //     state.py = y;
-  //   };
-  //   before('lineTo moveTo', saveCoords);
-  //   after('arcTo bezierCurveTo quadraticCurveTo', saveCoords);
-  //   return state;
-  // });
-
-  // /**
-  //  * Sometimes cy.js calls beginPath() and then immediatley calls lineTo() which doesn't work with pdfkit.
-  //  * Need to translate the the 'first' call to lineTo() into a call to moveTo().
-  //  */
-  // advice('moveTo', ({ before, after }) => {
-  //   const state = { moveTo: false };
-  //   before('beginPath', () => {
-  //     state.moveTo = true;
-  //   });
-  //   after('lineTo moveTo arcTo closePath', () => {
-  //     state.moveTo = false;
-  //   });
-  //   return state;
-  // });
-
-  // /**
-  //  * The PDF spec does not support calling fill() and then stroke().
-  //  * We need to translate those two calls into one call to fillAndStroke().
-  //  */
-  // advice('fillAndStroke', ({ before, beforeAllExcept, afterAllExcept }) => {
-  //   let fillCalled = false;
-  //   before('fill', () => {
-  //     fillCalled = true;
-  //   });
-  //   before('stroke', () => {
-  //     if(fillCalled)
-  //       doc.fillAndStroke();
-  //     else
-  //       doc.stroke();
-  //   });
-  //   beforeAllExcept('stroke fill strokeStyle lineWidth lineCap', () => {
-  //     if(fillCalled)
-  //       doc.fill();
-  //   });
-  //   afterAllExcept('fill strokeStyle lineWidth lineCap', () => {
-  //     fillCalled = false;
-  //   });
-  // });
 
 
   this.background = function (bg) {
@@ -582,7 +520,6 @@ const PdfContext = function(stream, width, height) {
     }
 
     if (image.nodeName === "IMG") {
-      console.log("HERE IMG");
       const canvas = document.createElement("canvas");
       canvas.width = image.width;
       canvas.height = image.height;
@@ -655,7 +592,6 @@ const PdfContext = function(stream, width, height) {
     doc.end();
   }
 
-  aop.wrapFunctions(this);
 };
 
-export default PdfContext;
+export default PdfEventProcessor;
