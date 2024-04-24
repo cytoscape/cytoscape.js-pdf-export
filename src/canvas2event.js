@@ -35,10 +35,9 @@ export default function CanvasEventBuffer() {
 
   // The proxy is a stand-in for CanvasRenderingContext2D.
   // Instead of drawing to the screen, it records calls to the canvas API and
-  // remembers them as 'event' objects.
+  // records them as 'event' objects.
   const proxy = new Proxy({}, {
     get(target, prop) {
-      console.log('get', prop);
       if(canvasMethods.has(prop)) {
         return (...args) => {
           events.push({ prop, type: 'method', args });
@@ -53,7 +52,6 @@ export default function CanvasEventBuffer() {
     },
     set(target, prop, value) {
       if(propertyState.hasOwnProperty(prop)) {
-        console.log('set', prop);
         propertyState[prop] = value;
         events.push({ prop, type: 'set', value });
       } else {
@@ -65,7 +63,7 @@ export default function CanvasEventBuffer() {
 
   const convert = () => convertEvents(events);
 
-  const runEvents = ctx => {
+  const runDrawEvents = ctx => {
     for(const event of events) {
       if(event === null)
         continue;
@@ -82,7 +80,7 @@ export default function CanvasEventBuffer() {
     proxy,
     events,
     convert,
-    runEvents,
+    runDrawEvents,
   }
 };
 

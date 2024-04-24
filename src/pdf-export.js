@@ -118,14 +118,7 @@ function createPdfBlob(cy, options) {
     proxy.translate(translation.x, translation.y);
     proxy.scale(scale, scale);
 
-    if(options.includeSvgLayers) { // TODO move this below, should draw svg directly on the pdf document
-      // const svgLayers = getSvgLayers(cy);
-      // drawSvgLayers(ctx, svgLayers.bg);
-      // renderer.drawElements(ctx, zsortedEles);
-      // drawSvgLayers(ctx, svgLayers.fg);
-    } else {
-      renderer.drawElements(proxy, zsortedEles);
-    }
+    renderer.drawElements(proxy, zsortedEles);
 
     proxy.scale(1/scale, 1/scale);
     proxy.translate(-translation.x, -translation.y);
@@ -144,8 +137,23 @@ function createPdfBlob(cy, options) {
   // Now draw to the PDF context
   const stream = blobStream();
   const ctx = new PdfEventProcessor(stream, width, height);
+  const p = createBlobPromise(ctx);
 
-  const p = new Promise((resolve, reject) => {
+  if(options.includeSvgLayers) {
+    const svgLayers = getSvgLayers(cy);
+    drawSvgLayers(ctx, svgLayers.bg);
+    eventBuffer.runDrawEvents(ctx);
+    drawSvgLayers(ctx, svgLayers.fg);
+  } else {
+    eventBuffer.runDrawEvents(ctx);
+  }
+
+  return p;
+};
+
+
+function createBlobPromise(ctx) {
+  return new Promise((resolve, reject) => {
     try {
       ctx.stream.on('finish', () => {
         const blob = ctx.stream.toBlob("application/pdf");
@@ -155,12 +163,7 @@ function createPdfBlob(cy, options) {
       reject(err);
     }
   });
-
-  eventBuffer.runEvents(ctx);
-
-  return p;
-};
-
+}
 
 function isNumber(obj) {
   return obj != null && typeof obj === typeof 1 && !isNaN(obj);
