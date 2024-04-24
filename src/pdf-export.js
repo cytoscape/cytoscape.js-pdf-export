@@ -57,14 +57,22 @@ function initRenderer(renderer) {
   allEles.dirtyBoundingBoxCache();
   allEles.dirtyCompoundBoundsCache();
   allEles.dirtyStyleCache();
+
   // Cached Path2D objects are used for clipping, pdfkit doesn't support that.
+  const paths = new Map();
+  for(const ele of allEles) {
+    paths.set(ele.id(), ele.rscratch('pathCache'));
+  }
   allEles.removeRscratch('pathCache'); 
 
   // pdfkit doesn't support Path2D
   const path2dEnabled = renderer.path2dEnabled();
   renderer.path2dEnabled(false);
 
-  return () => {
+  return function restore() {
+    for(const ele of allEles) {
+      ele.rscratch('pathCache', paths.get(ele.id()));
+    }
     renderer.path2dEnabled(path2dEnabled);
   };
 }
