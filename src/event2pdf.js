@@ -269,18 +269,12 @@ const PdfEventProcessor = function(stream, width, height) {
 
   this.beginPath = function () {
     // no-op
-    // see 'moveTo' advice above
   };
 
   this.lineTo = function (x, y) {
     if(isNaN(x) || isNaN(y))
       return;
-    // const { moveTo } = state('moveTo');
-    // if(moveTo) {
-    //   doc.moveTo(x, y);
-    // } else {
-      doc.lineTo(x, y);
-    // }
+    doc.lineTo(x, y);
   };
 
 
@@ -292,8 +286,6 @@ const PdfEventProcessor = function(stream, width, height) {
 
   // TODO change px, py to be last two args
   this.arcTo = function (x1, y1, x2, y2, r, px, py) {
-    // const { px, py } = state('point');
-
     // pdfkit doesn't have an arcTo() function, so we convert arcTo() into lineTo() then arc()
     const { T1, T2, C, a1, a2, ccw } = 
       calculateArcToGeom({
@@ -482,41 +474,21 @@ const PdfEventProcessor = function(stream, width, height) {
   };
 
   this.drawImage = function (image) {
-    // drawImage([object HTMLImageElement],0,0,1024,768,-53.333333333333314,-40,106.66666666666667,80)
-
     const args = Array.prototype.slice.call(arguments);
     image = args[0];
-    let dx,
-      dy,
-      dw,
-      dh,
-      sx = 0,
-      sy = 0,
-      sw,
-      sh;
+    let dx, dy, dw, dh, sx = 0, sy = 0, sw, sh;
     if (args.length === 3) {
-      dx = args[1];
-      dy = args[2];
+      [ dx, dy ] = args.slice(1);
       sw = image.width;
       sh = image.height;
       dw = sw;
       dh = sh;
     } else if (args.length === 5) {
-      dx = args[1];
-      dy = args[2];
-      dw = args[3];
-      dh = args[4];
+      [ dx, dy, dw, dh ] = args.slice(1);
       sw = image.width;
       sh = image.height;
-    } else if (args.length === 9) { // here
-      sx = args[1];
-      sy = args[2];
-      sw = args[3];
-      sh = args[4];
-      dx = args[5];
-      dy = args[6];
-      dw = args[7];
-      dh = args[8];
+    } else if (args.length === 9) {
+      [ sx, sy, sw, sh, dx, dy, dw, dh ] = args.slice(1);
     } else {
       throw new Error("Invalid number of arguments passed to drawImage: " + arguments.length);
     }
@@ -546,14 +518,7 @@ const PdfEventProcessor = function(stream, width, height) {
       (c1 * f1 - d1 * e1) / determinant,
       (b1 * e1 - a1 * f1) / determinant,
     ];
-    doc.transform(
-      inverse[0],
-      inverse[1],
-      inverse[2],
-      inverse[3],
-      inverse[4],
-      inverse[5],
-    );
+    doc.transform(...inverse);
     doc.translate(0, height);
     doc.scale(1, -1);
     doc.transform(a, b, c, d, e, f);
