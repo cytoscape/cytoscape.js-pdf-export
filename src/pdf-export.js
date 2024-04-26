@@ -132,7 +132,7 @@ function createPdfBlob(cy, options) {
   // Convert the canvas API 'events'
   console.log("Canvas events...")
   eventBuffer.events.forEach(evt => console.log(evt));
-  eventBuffer.convert();
+  eventBuffer.convertEvents();
   console.log("PDF events...")
   eventBuffer.events.forEach(evt => console.log(evt));
 

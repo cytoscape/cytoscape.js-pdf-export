@@ -61,29 +61,43 @@ export default function CanvasEventBuffer() {
     }
   })
 
-  const convert = () => convertEvents(events);
-
-  const runDrawEvents = ctx => {
-    for(const event of events) {
-      if(event === null)
-        continue;
-      console.log(event);
-      if(event.type === 'method') {
-        ctx[event.prop](...event.args);
-      } else if(event.type === 'set') {
-        ctx[event.prop] = event.value;
-      }
-    }
-  };
+  const convertEvents = () => convertEventsImpl(events);
+  const runDrawEvents = (ctx) => runDrawEventsImpl(ctx, events);
 
   return {
     proxy,
     events,
-    convert,
+    convertEvents,
     runDrawEvents,
   }
 };
 
+
+function runDrawEventsImpl(ctx, events) {
+  for(const event of events) {
+    if(event === null)
+      continue;
+    console.log(event);
+    if(event.type === 'method') {
+      ctx[event.prop](...event.args);
+    } else if(event.type === 'set') {
+      ctx[event.prop] = event.value;
+    } else if(event.type === 'multi') {
+      runDrawEventsImpl(ctx, event.events);
+    }
+  }
+}
+
+
+
+const drawFunctions = [
+  'lineTo', 'moveTo', 'arcTo', 'bezierCurveTo', 'quadraticCurveTo',
+  'ellipse', 'rect', 'arc'
+];
+
+const pathEndFunctions = [
+  'endPath', 'fill', 'stroke'
+];
 
 /**
  * Converts cytoscape.js canvas drawing "Events" into a form that is acceptible
@@ -97,7 +111,7 @@ export default function CanvasEventBuffer() {
  * into one call to fillAndStroke(). But fill() and stroke() might not be next to each
  * other, we need to search ahead for the call to stroke() that corresponds to a fill().
  */
-function convertEvents(events) {
+function convertEventsImpl(events) {
   let savedPath = [];
   const point = { px: 0, py: 0 };
   let nextStrokeNeedsPath = false;
@@ -124,9 +138,13 @@ function convertEvents(events) {
     if(prop === 'beginPath') {
       savedPath = [];
       let j = i + 1;
-      while(j < events.length && events[j].prop !== 'closePath') {
-        savedPath.push(events[j++]);
+      while(j < events.length && !pathEndFunctions.includes(events[j].prop)) {
+        if(drawFunctions.includes(events[j].prop)) {
+          savedPath.push(events[j]);
+        }
+        j++;
       }
+      nextStrokeNeedsPath = false;
     }
 
     // PDF does not support calling fill() then calling stroke()
@@ -142,12 +160,21 @@ function convertEvents(events) {
       }
     }
 
+    if(prop === 'clip') {
+      nextStrokeNeedsPath = true;
+    }
+
     if(prop === 'stroke') {
       if(nextStrokeNeedsPath) {
         events.splice(i, 0, 
-          { prop: 'beginPath', type: 'method', args: [] },
-          ...savedPath,
-          { prop: 'closePath', type: 'method', args: [] },
+          { type: 'multi',
+            description: 'nextStrokeNeedsPath',
+            events: [
+              { prop: 'beginPath', type: 'method', args: [] },
+              ...savedPath,
+              { prop: 'closePath', type: 'method', args: [] },
+            ]
+          }
         );
       }
       nextStrokeNeedsPath = false;
