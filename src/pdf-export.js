@@ -51,9 +51,11 @@ export async function pdfExport(options) {
 /**
  * Prepare the cytoscape.js canvas renderer for drawing to PDF.
  */
-function initRenderer(renderer) {
-  // Some caches need to be cleared.
+function initRenderer(cy) {
+  const renderer = cy.renderer();
   const allEles = cy.elements();
+
+  // Some caches need to be cleared.
   allEles.dirtyBoundingBoxCache();
   allEles.dirtyCompoundBoundsCache();
   allEles.dirtyStyleCache();
@@ -102,7 +104,7 @@ function createPdfBlob(cy, options) {
   // The proxy is a stand-in for CanvasRenderingContext2D
   const proxy = eventBuffer.proxy;
 
-  const restoreRenderer = initRenderer(renderer);
+  const restoreRenderer = initRenderer(cy);
   const zsortedEles = renderer.getCachedZSortedEles();
 
   if(options.full) {
