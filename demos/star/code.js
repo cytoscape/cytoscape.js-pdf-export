@@ -50,6 +50,6 @@ const cy = cytoscape({
 });
 
 cy.ready(() => {
-  window.pdf = () => cy.pdf({ bg: '#000' });
+  window.pdf = () => cy.pdf({ bg: '#000', save: true });
 });
 

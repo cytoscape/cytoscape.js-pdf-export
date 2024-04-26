@@ -238,10 +238,6 @@ const PdfEventProcessor = function(stream, width, height) {
     doc.rect(0, 0, doc.page.width, doc.page.height).fill(bg);
   }
 
-  this.background = function () {
-    doc.end();
-  };
-
   this.save = function () {
     doc.save();
   };
