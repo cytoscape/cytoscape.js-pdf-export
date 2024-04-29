@@ -7,6 +7,13 @@ import { createAOP } from "./aop";
  *  A canvas to PDF converter. Uses a mock canvas context to build a PDF document.
  */
 
+function isPDFGradient(value) {
+  if(value?.constructor?.name === 'PDFLinearGradient') {
+    return true;
+  }
+  return false;
+}
+
 function hex(v) {
   return v < 0x10
     ? "0" + Math.max(0, v).toString(16)
@@ -53,6 +60,9 @@ const rgbToHex = function (r, g, b, a) {
 };
 
 const fixColor = function (value) {
+  if(isPDFGradient(value))
+    return value;
+
   let m;
   const format = (value + "").trim().toLowerCase();
   if ((m = reRgbInteger.exec(format))) {
@@ -170,8 +180,12 @@ const PdfEventProcessor = function(stream, width, height) {
     get: function () { return fillStyleVal; },
     set: function (value) {
       fillStyleVal = value;
-      const color = fixColor(value);
-      doc.fillColor(color.c, color.a);
+      if(isPDFGradient(value)) {
+        doc.fillColor(value);
+      } else {
+        const { c, a } = fixColor(value);
+        doc.fillColor(c, a);
+      }
     },
   });
 
@@ -180,8 +194,12 @@ const PdfEventProcessor = function(stream, width, height) {
     get: function () { return strokeStyleVal; },
     set: function (value) {
       strokeStyleVal = value;
-      const color = fixColor(value);
-      doc.strokeColor(color.c, color.a);
+      if(isPDFGradient(value)) {
+        doc.strokeColor(value);
+      } else {
+        const { c, a } = fixColor(value);
+        doc.strokeColor(c, a);
+      }
     },
   });
 
@@ -401,12 +419,13 @@ const PdfEventProcessor = function(stream, width, height) {
     doc.quadraticCurveTo(cpx, cpy, x, y);
   };
 
-  this.createLinearGradient = function (x1, y1, x2, y2) {
+  this.createLinearGradient = function (x1, y1, x2, y2, stops) {
+    console.log('createLinerarGradient');
     const gradient = doc.linearGradient(x1, y1, x2, y2);
-    gradient.addColorStop = function (offset, color) {
+    for(const [ offset, color ] of stops) {
       const fixedColor = fixColor(color);
       gradient.stop(offset, fixedColor.c, fixedColor.a);
-    };
+    }
     return gradient;
   };
 

@@ -44,8 +44,21 @@ export default function CanvasEventBuffer() {
         }
       } else if(propertyState.hasOwnProperty(prop)) {
         const value = propertyState[prop];
-        //events.push({ type: 'get', prop, value }); // do we need 'get' events?
         return value;
+      } else if(prop === 'createLinearGradient') {
+        return (...args) => {
+          const event = { prop, type: 'gradient', args, stops: [] };
+          events.push(event);
+          return new Proxy({}, {
+            get(target, prop) {
+              if(prop === 'addColorStop') {
+                return (...args) => {
+                  event.stops.push(args);
+                };
+              }
+            }
+          });
+        }
       } else {
         console.log('get: unsupported canvas property: ' + prop);
       }
@@ -81,9 +94,16 @@ function runDrawEventsImpl(ctx, events) {
     if(event.type === 'method') {
       ctx[event.prop](...event.args);
     } else if(event.type === 'set') {
-      ctx[event.prop] = event.value;
+      if(event.gradientEvent) {
+        const gradient = runDrawEventsImpl(ctx, [event.gradientEvent]);
+        ctx[event.prop] = gradient;
+      } else {
+        ctx[event.prop] = event.value;
+      }
     } else if(event.type === 'multi') {
       runDrawEventsImpl(ctx, event.events);
+    } else if(event.type === 'gradient') {
+      return ctx[event.prop](...event.args, event.stops);
     }
   }
 }
@@ -121,7 +141,14 @@ function convertEventsImpl(events) {
     const event = events[i];
     if(event === null)
       continue;
-    const { prop } = event;
+    const { prop, type } = event;
+
+    if(type === 'gradient') {
+      if(events[i+1].prop === 'fillStyle') { // TODO search ahead for next fillStyle?
+        events[i] = null;
+        events[i+1].gradientEvent = event;
+      }
+    }
 
     /**
      * Sometimes cy.js calls beginPath() and then immediatley calls lineTo() which doesn't work with pdfkit.
