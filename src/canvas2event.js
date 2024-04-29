@@ -5,7 +5,7 @@ const canvasMethods = new Set([
   'transform', 'beginPath', 'lineTo', 'moveTo', 'arcTo', 'closePath', 
   'stroke', 'fill', 'ellipse', 'rect', 'arc', 'bezierCurveTo', 'quadraticCurveTo',
   'adjustTextX', 'adjustTextY', 'fillText', 'strokeText', 'clip',
-  'drawImage', 
+  'drawImage', 'setLineDash'
 ]);
 
 
@@ -47,7 +47,7 @@ export default function CanvasEventBuffer() {
         //events.push({ type: 'get', prop, value }); // do we need 'get' events?
         return value;
       } else {
-        console.log('get unsupported canvas property: ' + prop);
+        console.log('get: unsupported canvas property: ' + prop);
       }
     },
     set(target, prop, value) {
@@ -55,7 +55,7 @@ export default function CanvasEventBuffer() {
         propertyState[prop] = value;
         events.push({ prop, type: 'set', value });
       } else {
-        console.log('set unsupported canvas property: ' + prop);
+        console.log('set: unsupported canvas property: ' + prop);
       }
       return true;
     }

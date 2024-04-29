@@ -520,16 +520,37 @@ const PdfEventProcessor = function(stream, width, height) {
     doc.transform(a, b, c, d, e, f);
   };
 
+
+  this.setLineDash = function (arr) {
+    if(!Array.isArray(arr)) {
+      console.log("argument to setLineDash must be an array");
+      return;
+    }
+
+    if(arr.length === 0) {
+      doc.undash();
+      return;
+    }
+
+    if(arr.length % 2 == 1) {
+      arr.push(...arr);
+    }
+
+    if(arr.length == 2) {
+      const [ dashLength, gapLength ] = arr;
+      doc.dash(dashLength, { space: gapLength });
+    } else {
+      doc.addContent(`[${arr.join(' ')}] 0 d`);
+    }
+  };
+
+
   /**
    * Not yet implemented
    */
   this.createPattern = function (image, repetition) {
     console.log("createPattern not implemented");
   };
-
-  // this.setLineDash = function (dashArray) {
-  //   console.log("setLineDash not implemented");
-  // };
 
   this.drawFocusRing = function () {
     console.log("drawFocusRing not implemented");
