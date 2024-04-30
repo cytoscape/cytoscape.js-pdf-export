@@ -420,7 +420,6 @@ const PdfEventProcessor = function(stream, width, height) {
   };
 
   this.createLinearGradient = function (x1, y1, x2, y2, stops) {
-    console.log('createLinerarGradient');
     const gradient = doc.linearGradient(x1, y1, x2, y2);
     for(const [ offset, color ] of stops) {
       const fixedColor = fixColor(color);
@@ -429,12 +428,12 @@ const PdfEventProcessor = function(stream, width, height) {
     return gradient;
   };
 
-  this.createRadialGradient = function (x0, y0, r0, x1, y1, r1) {
+  this.createRadialGradient = function (x0, y0, r0, x1, y1, r1, stops) {
     const gradient = doc.radialGradient(x0, y0, r0, x1, y1, r1);
-    gradient.addColorStop = function (offset, color) {
+    for(const [ offset, color ] of stops) {
       const fixedColor = fixColor(color);
       gradient.stop(offset, fixedColor.c, fixedColor.a);
-    };
+    }
     return gradient;
   };
 

@@ -24,6 +24,21 @@ const cy = cytoscape({
       }
     },
     {
+      selector: '#n2',
+      style: {
+        'background-fill': 'linear-gradient',
+        'background-gradient-direction': 'to-left',
+        'background-gradient-stop-colors': 'gold red lawngreen'
+      }
+    },
+    {
+      selector: '#n3',
+      style: {
+        'background-fill': 'radial-gradient',
+        'background-gradient-stop-colors': 'cyan magenta yellow'
+      }
+    },
+    {
       selector: 'edge',
       style: {
         'width': 2,
@@ -60,31 +75,29 @@ const cy = cytoscape({
       selector: '#n2-n3',
       style: {
         'line-fill': 'linear-gradient',
-        'line-gradient-stop-colors': 'green red'
+        'line-gradient-stop-colors': 'lawngreen red'
       }
     }
-
-    // TODO 'line-fill'
   ],
   elements: {
     nodes: [
       { data: { id: 'n1', weight: 1 } },
       { data: { id: 'n2', weight: 2 } },
-      // { data: { id: 'n3', weight: 3 } },
-      // { data: { id: 'n4', weight: 4 } },
-      // { data: { id: 'n5', weight: 5 } },
+      { data: { id: 'n3', weight: 3 } },
+      { data: { id: 'n4', weight: 4 } },
+      { data: { id: 'n5', weight: 5 } },
     ],
     edges: [
-      // { data: { id:'n1-n2', source: 'n1', target: 'n2', directed: 'false' } },
-      // { data: { id:'n1-n3', source: 'n1', target: 'n3', directed: 'false' } },
-      // { data: { id:'n1-n4', source: 'n1', target: 'n4', directed: 'false' } },
-      // { data: { id:'n1-n5', source: 'n1', target: 'n5', directed: 'false' } },
-      // { data: { id:'n2-n3', source: 'n2', target: 'n3', directed: 'false' } },
-      // { data: { id:'n2-n4', source: 'n2', target: 'n4', directed: 'false' } },
-      // { data: { id:'n2-n5', source: 'n2', target: 'n5', directed: 'false' } },
-      // { data: { id:'n3-n4', source: 'n3', target: 'n4', directed: 'false' } },
-      // { data: { id:'n3-n5', source: 'n3', target: 'n5', directed: 'false' } },
-      // { data: { id:'n4-n5', source: 'n4', target: 'n5', directed: 'false' } },
+      { data: { id:'n1-n2', source: 'n1', target: 'n2', directed: 'false' } },
+      { data: { id:'n1-n3', source: 'n1', target: 'n3', directed: 'false' } },
+      { data: { id:'n1-n4', source: 'n1', target: 'n4', directed: 'false' } },
+      { data: { id:'n1-n5', source: 'n1', target: 'n5', directed: 'false' } },
+      { data: { id:'n2-n3', source: 'n2', target: 'n3', directed: 'false' } },
+      { data: { id:'n2-n4', source: 'n2', target: 'n4', directed: 'false' } },
+      { data: { id:'n2-n5', source: 'n2', target: 'n5', directed: 'false' } },
+      { data: { id:'n3-n4', source: 'n3', target: 'n4', directed: 'false' } },
+      { data: { id:'n3-n5', source: 'n3', target: 'n5', directed: 'false' } },
+      { data: { id:'n4-n5', source: 'n4', target: 'n5', directed: 'false' } },
     ],
   },
 });

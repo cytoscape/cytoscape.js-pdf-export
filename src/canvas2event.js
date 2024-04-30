@@ -1,6 +1,6 @@
 
 // Canvas API methods that we will support
-const canvasMethods = new Set([
+const canvasProps = new Set([
   'background', 'end', 'save', 'restore', 'scale', 'rotate', 'translate',
   'transform', 'beginPath', 'lineTo', 'moveTo', 'arcTo', 'closePath', 
   'stroke', 'fill', 'ellipse', 'rect', 'arc', 'bezierCurveTo', 'quadraticCurveTo',
@@ -8,6 +8,9 @@ const canvasMethods = new Set([
   'drawImage', 'setLineDash'
 ]);
 
+const gradientProps = new Set([
+  'createLinearGradient', 'createRadialGradient'
+]);
 
 /**
  * Records calls to the canvas API (made by cytoscape.js) and saves 
@@ -19,9 +22,8 @@ const canvasMethods = new Set([
 export default function CanvasEventBuffer() {
 
   const events = [];
-
-  // TODO: verify these defaults
-  const propertyState = {
+  
+  const propertyState = { // TODO: verify these defaults
     font: "10px Helvetica",
     textBaseline: "alphabetic",
     textAlign: "left",
@@ -35,26 +37,21 @@ export default function CanvasEventBuffer() {
 
   // The proxy is a stand-in for CanvasRenderingContext2D.
   // Instead of drawing to the screen, it records calls to the canvas API and
-  // records them as 'event' objects.
+  // stores them as 'event' objects, which can be transformed and used to draw to PDF.
   const proxy = new Proxy({}, {
     get(target, prop) {
-      if(canvasMethods.has(prop)) {
-        return (...args) => {
-          events.push({ prop, type: 'method', args });
-        }
+      if(canvasProps.has(prop)) {
+        return (...args) => events.push({ prop, type: 'method', args });
       } else if(propertyState.hasOwnProperty(prop)) {
-        const value = propertyState[prop];
-        return value;
-      } else if(prop === 'createLinearGradient') {
+        return propertyState[prop];
+      } else if(gradientProps.has(prop)) {
         return (...args) => {
           const event = { prop, type: 'gradient', args, stops: [] };
           events.push(event);
           return new Proxy({}, {
             get(target, prop) {
               if(prop === 'addColorStop') {
-                return (...args) => {
-                  event.stops.push(args);
-                };
+                return (...stopArgs) => event.stops.push(stopArgs);
               }
             }
           });
@@ -144,9 +141,10 @@ function convertEventsImpl(events) {
     const { prop, type } = event;
 
     if(type === 'gradient') {
-      if(events[i+1].prop === 'fillStyle') { // TODO search ahead for next fillStyle?
+      const nextEvt = events[i+1];
+      if(nextEvt.prop === 'fillStyle' || nextEvt.prop === 'strokeStyle') { // TODO search ahead for next fillStyle?
         events[i] = null;
-        events[i+1].gradientEvent = event;
+        nextEvt.gradientEvent = event;
       }
     }
 
