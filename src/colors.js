@@ -8,6 +8,15 @@ const hslaNoBackRefs = 'hsl[a]?\\((?:' + number + ')\\s*,\\s*(?:' + number + '[%
 const hex3 = '\\#[0-9a-fA-F]{3}';
 const hex6 = '\\#[0-9a-fA-F]{6}';
 
+function hex(v) {
+  return v < 0x10
+    ? "0" + Math.max(0, v).toString(16)
+    : Math.min(255, v).toString(16);
+}
+
+export function rgbToHex(r, g, b, a) {
+  return { c: "#" + hex(r) + hex(g) + hex(b), a: a === undefined ? 1 : a };
+};
 
   // get [r, g, b] from #abc or #aabbcc
 export const hex2tuple = hex => {

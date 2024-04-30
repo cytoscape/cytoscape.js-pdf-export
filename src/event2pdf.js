@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import { calculateArcToGeom } from './arcTo';
 import { createAOP } from "./aop";
+import { color2tuple, rgbToHex } from './colors';
 
 /*
  *
@@ -8,94 +9,20 @@ import { createAOP } from "./aop";
  */
 
 function isPDFGradient(value) {
-  if(value?.constructor?.name === 'PDFLinearGradient') {
+  if(value?.constructor?.name === 'PDFLinearGradient' || 
+     value?.constructor?.name === 'PDFRadialGradient') {
     return true;
   }
   return false;
 }
 
-function hex(v) {
-  return v < 0x10
-    ? "0" + Math.max(0, v).toString(16)
-    : Math.min(255, v).toString(16);
-}
-
-function hslToHex(h, s, l, a) {
-  h = (h % 360) + (h < 0) * 360;
-  s = isNaN(h) || isNaN(s) ? 0 : s;
-  const m2 = l + (l < 0.5 ? l : 1 - l) * s;
-  const m1 = 2 * l - m2;
-  return rgbToHex(
-    hsl2rgb(h >= 240 ? h - 240 : h + 120, m1, m2),
-    hsl2rgb(h, m1, m2),
-    hsl2rgb(h < 120 ? h + 240 : h - 120, m1, m2),
-    a,
-  );
-}
-
-function hsl2rgb(h, m1, m2) {
-  return (
-    (h < 60
-      ? m1 + ((m2 - m1) * h) / 60
-      : h < 180
-      ? m2
-      : h < 240
-      ? m1 + ((m2 - m1) * (240 - h)) / 60
-      : m1) * 255
-  );
-}
-
-const reI = "\\s*([+-]?\\d+)\\s*",
-  reN = "\\s*([+-]?\\d*\\.?\\d+(?:[eE][+-]?\\d+)?)\\s*",
-  reP = "\\s*([+-]?\\d*\\.?\\d+(?:[eE][+-]?\\d+)?)%\\s*",
-  reRgbInteger = new RegExp("^rgb\\(" + [reI, reI, reI] + "\\)$"),
-  reRgbPercent = new RegExp("^rgb\\(" + [reP, reP, reP] + "\\)$"),
-  reRgbaInteger = new RegExp("^rgba\\(" + [reI, reI, reI, reN] + "\\)$"),
-  reRgbaPercent = new RegExp("^rgba\\(" + [reP, reP, reP, reN] + "\\)$"),
-  reHslPercent = new RegExp("^hsl\\(" + [reN, reP, reP] + "\\)$"),
-  reHslaPercent = new RegExp("^hsla\\(" + [reN, reP, reP, reN] + "\\)$");
-
-const rgbToHex = function (r, g, b, a) {
-  return { c: "#" + hex(r) + hex(g) + hex(b), a: a };
-};
-
-const fixColor = function (value) {
+function fixColor(value) {
   if(isPDFGradient(value))
     return value;
+  const [ r, g, b, a ] = color2tuple(value);
+  return rgbToHex(r, g, b, a);
+}
 
-  let m;
-  const format = (value + "").trim().toLowerCase();
-  if ((m = reRgbInteger.exec(format))) {
-    // rgb(255, 0, 0)
-    return rgbToHex(m[1], m[2], m[3], 1);
-  } else if ((m = reRgbPercent.exec(format))) {
-    // // rgb(100%, 0%, 0%)
-    return rgbToHex(
-      (m[1] * 255) / 100,
-      (m[2] * 255) / 100,
-      (m[3] * 255) / 100,
-      1,
-    );
-  } else if ((m = reRgbaInteger.exec(format))) {
-    // // rgba(255, 0, 0, 0.5)
-    return rgbToHex(m[1], m[2], m[3], m[4]);
-  } else if ((m = reRgbaPercent.exec(format))) {
-    // // rgb(100%, 0%, 0%, .2)
-    return rgbToHex(
-      (m[1] * 255) / 100,
-      (m[2] * 255) / 100,
-      (m[3] * 255) / 100,
-      m[4],
-    );
-  } else if ((m = reHslPercent.exec(format))) {
-    // // hsl(120, 50%, 50%)
-    return hslToHex(m[1], m[2] / 100, m[3] / 100);
-  } else if ((m = reHslaPercent.exec(format))) {
-    return hslToHex(m[1], m[2] / 100, m[3] / 100, m[4]); // hsla(120, 50%, 50%, 1)
-  } else {
-    return { c: value, a: 1 };
-  }
-};
 
 /**
  *
