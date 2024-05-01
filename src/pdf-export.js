@@ -38,7 +38,8 @@ export const defaultOptions = {
   orientation: 'portrait', // 'portrait' or 'landscape'
   width: null,  // paper width  in "PostScript points", 72 units per inch
   height: null, // paper height in "PostScript points", 72 units per inch
-  margin: DEFAULT_MARGIN, // margin in "PostScript points"
+  margin: DEFAULT_MARGIN, // margin in "PostScript points",
+  debug: false, // if true will log debug info to the console
 };
 
 
@@ -65,7 +66,9 @@ window.blobStream = blobStream;
  */
 export async function pdfExport(options) {
   options = { ...defaultOptions, ...options };
-  console.log('pdfExport', options);
+  if(options.debug) {
+    console.log('pdfExport options', options);
+  }
   const cy = this;
 
   const blob = await createPdfBlob(cy, options);
@@ -142,14 +145,16 @@ function createPdfBlob(cy, options) {
   const [,, networkWidth, networkHeight ] = renderer.findContainerClientCoords();
   const imageScale = Math.min(width / networkWidth, height / networkHeight);
 
-  console.log('bb', bb);
-  console.log('paper width/height', paperWidth, paperWidth);
-  console.log('draw width/height (minus margins)', width, height);
-  console.log('network width/height', networkWidth, networkHeight);
-  console.log('imageScale', imageScale);
+  if(options.debug) {
+    console.log('bb', bb);
+    console.log('paper width/height', paperWidth, paperWidth);
+    console.log('draw width/height (minus margins)', width, height);
+    console.log('network width/height', networkWidth, networkHeight);
+    console.log('imageScale', imageScale);
+  }
 
   // Record the calls to the canvas API, but don't actually draw anything yet.
-  const eventBuffer = CanvasEventBuffer();
+  const eventBuffer = CanvasEventBuffer(options.debug);
   const proxy = eventBuffer.proxy; // The proxy is a stand-in for CanvasRenderingContext2D
 
   const restoreRenderer = initRenderer(cy);
@@ -191,15 +196,21 @@ function createPdfBlob(cy, options) {
   restoreRenderer();
 
   // Convert the canvas API 'events'
-  console.log("Canvas events...")
-  eventBuffer.events.forEach(evt => console.log(evt));
+  if(options.debug) {
+    console.log("Canvas events...")
+    eventBuffer.events.forEach(evt => console.log(evt));
+  }
+
   eventBuffer.convertEvents();
-  console.log("PDF events...")
-  eventBuffer.events.forEach(evt => console.log(evt));
+
+  if(options.debug) {
+    console.log("PDF events...")
+    eventBuffer.events.forEach(evt => console.log(evt));
+  }
 
   // Now draw to the PDF context
   const stream = blobStream();
-  const ctx = new PdfEventProcessor(stream, paperWidth, paperHeight);
+  const ctx = new PdfEventProcessor(stream, paperWidth, paperHeight, options.debug);
   const p = createBlobPromise(ctx);
 
   // TODO this is not going to work, needs to be called inside of the translate/scale setup

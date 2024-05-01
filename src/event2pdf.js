@@ -31,7 +31,7 @@ function fixColor(value) {
  * @param options Options passed to PDFDocument constructor.
  * @constructor
  */
-const PdfEventProcessor = function(stream, width, height) {
+const PdfEventProcessor = function(stream, width, height, debug) {
   if (stream == null) {
     throw new Error("Stream must be provided.");
   }
@@ -40,12 +40,10 @@ const PdfEventProcessor = function(stream, width, height) {
   
   doc.addPage({ size: [width, height] }); // PDF has 72 'units' per inch
 
-  console.log(doc);
   this.doc = doc;
   this.stream = doc.pipe(stream);
 
   // Allows properties to be affected by AOP module
-  // TODO remove this?
   const propProps = { enumerable: true, configurable: true };
 
   // We have to remember the values of these properties, pdfkit doesn't have getters for these.
@@ -130,18 +128,19 @@ const PdfEventProcessor = function(stream, width, height) {
   });
 
 
-  // Debug tracing for calls to the PDFDocument API
-  const pdfkitAop = createAOP();
-  pdfkitAop.advice('debug-trace', ({ beforeAll }) => {
-    beforeAll((fname, ...args) => {
-      if(fname[0] !== '_' && !['emit','read','begin','push','removeListener'].includes(fname)) {
-        const printArgs = Array.from(args).map(a => (typeof a === 'string') ? a.slice(0, 100) : a);
-        console.log(`... ${fname}(${printArgs})`);
-      }
+  if(debug) {
+    // Debug tracing for calls to the PDFDocument API
+    const pdfkitAop = createAOP();
+    pdfkitAop.advice('debug-trace', ({ beforeAll }) => {
+      beforeAll((fname, ...args) => {
+        if(fname[0] !== '_' && !['emit','read','begin','push','removeListener'].includes(fname)) {
+          const printArgs = Array.from(args).map(a => (typeof a === 'string') ? a.slice(0, 100) : a);
+          console.log(`... ${fname}(${printArgs})`);
+        }
+      });
     });
-  });
-  pdfkitAop.wrapFunctions(doc);
-
+    pdfkitAop.wrapFunctions(doc);
+  }
 
   this.background = function (x, y, width, height, color) {
     const { c } = fixColor(color);

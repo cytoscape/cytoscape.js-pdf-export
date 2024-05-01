@@ -19,7 +19,7 @@ const gradientProps = new Set([
  * The array of events can then be converted into a form that can be
  * used to draw to PDF instead of canvas.
  */
-export default function CanvasEventBuffer() {
+export default function CanvasEventBuffer(debug) {
 
   const events = [];
   
@@ -72,7 +72,11 @@ export default function CanvasEventBuffer() {
   })
 
   const convertEvents = () => convertEventsImpl(events);
-  const runDrawEvents = (ctx) => runDrawEventsImpl(ctx, events);
+  const runDrawEvents = (ctx) => {
+    if(debug)
+      console.log('Drawing PDF Events...')
+    runDrawEventsImpl(ctx, events, debug);
+  };
 
   return {
     proxy,
@@ -83,11 +87,13 @@ export default function CanvasEventBuffer() {
 };
 
 
-function runDrawEventsImpl(ctx, events) {
+function runDrawEventsImpl(ctx, events, debug) {
   for(const event of events) {
     if(event === null)
       continue;
-    console.log(event);
+    if(debug)
+      console.log(event);
+
     if(event.type === 'method') {
       ctx[event.prop](...event.args);
     } else if(event.type === 'set') {

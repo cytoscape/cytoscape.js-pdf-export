@@ -70,6 +70,5 @@ export function parseFont(font) {
     weight,
   };
 
-  console.log('parseFont', data);
   return data;
 };
