@@ -57,8 +57,8 @@ const PdfEventProcessor = function(stream, width, height) {
   let lineHeight = doc.currentLineHeight(false);
   let fontValue = defaultFontData.family;
   Object.defineProperty(this, "font", { ...propProps,
-    get: function () { return fontValue; },
-    set: function (value) {
+    get() { return fontValue; },
+    set(value) {
       fontValue = value;
       const parsedFont = parseFont(value);
       doc.fontSize(parsedFont.size);
@@ -69,20 +69,20 @@ const PdfEventProcessor = function(stream, width, height) {
   
   let textBaseline = "alphabetic";
   Object.defineProperty(this, "textBaseline", { ...propProps,
-    get: function () { return textBaseline; },
-    set: function (value) { textBaseline = value; },
+    get() { return textBaseline; },
+    set(value) { textBaseline = value; },
   });
 
   let textAlign = "left";
   Object.defineProperty(this, "textAlign", { ...propProps,
-    get: function () { return textAlign; },
-    set: function (value) { textAlign = value; },
+    get() { return textAlign; },
+    set(value) { textAlign = value; },
   });
 
   let fillStyleVal;
   Object.defineProperty(this, "fillStyle", { ...propProps,
-    get: function () { return fillStyleVal; },
-    set: function (value) {
+    get() { return fillStyleVal; },
+    set(value) {
       fillStyleVal = value;
       if(isPDFGradient(value)) {
         doc.fillColor(value);
@@ -95,8 +95,8 @@ const PdfEventProcessor = function(stream, width, height) {
 
   let strokeStyleVal;
   Object.defineProperty(this, "strokeStyle", { ...propProps,
-    get: function () { return strokeStyleVal; },
-    set: function (value) {
+    get() { return strokeStyleVal; },
+    set(value) {
       strokeStyleVal = value;
       if(isPDFGradient(value)) {
         doc.strokeColor(value);
@@ -109,40 +109,32 @@ const PdfEventProcessor = function(stream, width, height) {
 
   let lineWidthVal;
   Object.defineProperty(this, "lineWidth", { ...propProps,
-    get: function () { return lineWidthVal; },
-    set: function (value) {
-      lineWidthVal = value;
-      doc.lineWidth(value);
-    },
+    get() { return lineWidthVal; },
+    set(value) { doc.lineWidth(lineWidthVal = value); },
   });
 
   let lineCapVal;
   Object.defineProperty(this, "lineCap", { ...propProps,
-    get: function () { return lineCapVal; },
-    set: function (value) {
-      lineCapVal = value;
-      doc.lineCap(value);
-    },
+    get() { return lineCapVal; },
+    set(value) { doc.lineCap(lineCapVal = value); },
   });
 
   let lineJoinVal;
   Object.defineProperty(this, "lineJoin", { ...propProps,
-    get: function () { return lineJoinVal; },
-    set: function (value) {
-      lineJoinVal = value;
-      doc.lineJoin(value);
-    },
+    get() { return lineJoinVal; },
+    set(value) { doc.lineJoin(lineJoinVal = value); },
   });
 
   let globalAlphaVal;
   Object.defineProperty(this, "globalAlpha", { ...propProps,
-    get: function () { return globalAlphaVal; },
-    set: function (value) {
+    get() { return globalAlphaVal; },
+    set(value) {
       globalAlphaVal = value;
       value >= 0.0 && value <= 1.0 && doc.opacity(value);
     },
   });
 
+  
   // Debug tracing for calls to the PDFDocument API
   const pdfkitAop = createAOP();
   pdfkitAop.advice('debug-trace', ({ beforeAll }) => {
