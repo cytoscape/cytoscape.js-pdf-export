@@ -36,16 +36,11 @@ const PdfEventProcessor = function(stream, width, height) {
     throw new Error("Stream must be provided.");
   }
 
-  const doc = new PDFDocument({
-    autoFirstPage: false,
-  });
-  // PDF has 72 'units' per inch
-  doc.addPage({
-    size: [width, height]
-  });
+  const doc = new PDFDocument({ autoFirstPage: false });
+  
+  doc.addPage({ size: [width, height] }); // PDF has 72 'units' per inch
 
   console.log(doc);
-
   this.doc = doc;
   this.stream = doc.pipe(stream);
 
@@ -148,8 +143,10 @@ const PdfEventProcessor = function(stream, width, height) {
   pdfkitAop.wrapFunctions(doc);
 
 
-  this.background = function (bg) {
-    doc.rect(0, 0, doc.page.width, doc.page.height).fill(bg);
+  this.background = function (x, y, width, height, color) {
+    const { c } = fixColor(color);
+    doc.rect(x, y, width, height);
+    doc.fill(c);
   }
 
   this.save = function () {

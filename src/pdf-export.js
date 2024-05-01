@@ -8,6 +8,40 @@ import saveAs from 'file-saver'; // TODO remove this dependency?
 import './pdfkit-virtual-files.js';  // https://github.com/blikblum/pdfkit-webpack-example/issues/1
 
 
+// Sizes are in "PostScript points", 72 points per inch
+const PAPER_SIZES = {
+  LETTER: [612, 792],
+  LEGAL: [612, 1008],
+  TABLOID: [792, 1224], 
+  A0: [2384, 3370],
+  A1: [1684, 2384],
+  A2: [1191, 1684],
+  A3: [842, 1190],
+  A4: [595, 842],
+  A5: [420, 595],
+};
+const UNITS_PER_INCH = 72;
+const DEFAULT_PAPER_SIZE = 'LETTER';
+const DEFAULT_MARGIN = UNITS_PER_INCH * 0.75;
+
+
+/**
+ * Options for the pdf() function.
+ */
+export const defaultOptions = {
+  save: false, // TODO remove this, its only here for now because its convenient
+  fileName: 'cytoscape.pdf',
+  includeSvgLayers: false,
+  full: false,
+  bg: false, // HEX color code
+  paperSize: DEFAULT_PAPER_SIZE, // one of the values in the PAPER_SIZES enum, or 'CUSTOM'
+  orientation: 'portrait', // 'portrait' or 'landscape'
+  width: null,  // paper width  in "PostScript points", 72 units per inch
+  height: null, // paper height in "PostScript points", 72 units per inch
+  margin: DEFAULT_MARGIN, // margin in "PostScript points"
+};
+
+
 /**
  * Register pdf() function as a cytoscape.js extension.
  */
@@ -27,16 +61,11 @@ window.blobStream = blobStream;
 
 
 /**
- * Options for the pdf() function.
+ * The main entrypoint.
  */
-export const defaultOptions = {
-  save: false,
-  fileName: 'cytoscape.pdf',
-  includeSvgLayers: false,
-};
-
 export async function pdfExport(options) {
   options = { ...defaultOptions, ...options };
+  console.log('pdfExport', options);
   const cy = this;
 
   const blob = await createPdfBlob(cy, options);
@@ -80,43 +109,75 @@ function initRenderer(cy) {
 }
 
 
+function getPaperSize(options) {
+  if(options.paperSize === 'CUSTOM') {
+    if(options.width > 0 && options.height > 0) {
+      return [ options.width, options.height ];
+    }
+    console.warn(`paperSize=CUSTOM but valid width/height not provided, using ${DEFAULT_PAPER_SIZE} instead`);
+    return PAPER_SIZES[DEFAULT_PAPER_SIZE];
+  }
+
+  let size = PAPER_SIZES[options.paperSize] || PAPER_SIZES[DEFAULT_PAPER_SIZE];
+  if(options.orientation === 'landscape' || options.orientation === 'LANDSCAPE') {
+    return size.reverse();
+  }
+  return size;
+}
+
+
 /**
  * Create the PDF.
  */
 function createPdfBlob(cy, options) {
   const renderer = cy.renderer();
-  var eles = cy.mutableElements();
-  var bb = eles.boundingBox();
-  var ctrRect = renderer.findContainerClientCoords();
-  var width  = options.full ? Math.ceil(bb.w) : ctrRect[2];
-  var height = options.full ? Math.ceil(bb.h) : ctrRect[3];
-  var specdMaxDims = isNumber(options.maxWidth) || isNumber(options.maxHeight);
-  var pxRatio = renderer.getPixelRatio();
-  var scale = 1;
+  const eles = cy.mutableElements();
+  const bb = eles.boundingBox();
 
-  if(width <= 0 || height <= 0) {
-    return;
-  }
+  const { margin } = options;
+  const [ paperWidth, paperHeight ] = getPaperSize(options);
+  const width  = paperWidth  - (margin * 2);
+  const height = paperHeight - (margin * 2);
+
+  const [,, networkWidth, networkHeight ] = renderer.findContainerClientCoords();
+  const imageScale = Math.min(width / networkWidth, height / networkHeight);
+
+  console.log('bb', bb);
+  console.log('paper width/height', paperWidth, paperWidth);
+  console.log('draw width/height (minus margins)', width, height);
+  console.log('network width/height', networkWidth, networkHeight);
+  console.log('imageScale', imageScale);
 
   // Record the calls to the canvas API, but don't actually draw anything yet.
   const eventBuffer = CanvasEventBuffer();
-
-  // The proxy is a stand-in for CanvasRenderingContext2D
-  const proxy = eventBuffer.proxy;
+  const proxy = eventBuffer.proxy; // The proxy is a stand-in for CanvasRenderingContext2D
 
   const restoreRenderer = initRenderer(cy);
   const zsortedEles = renderer.getCachedZSortedEles();
 
+  proxy.translate(margin, margin);
+  proxy.scale(imageScale, imageScale);
+  if(options.bg) {
+    proxy.background(0, 0, networkWidth, networkHeight, options.bg);
+  }
+  proxy.rect(0, 0, networkWidth, networkHeight);
+  proxy.clip();
+
+
   if(options.full) {
     // TODO
+    // proxy.translate(-bb.x1 * scale, -bb.y1 * scale);
+    // proxy.scale(scale, scale);
+
+    // renderer.drawElements(proxy, zsortedEles);
+
+    // proxy.scale(1/scale, 1/scale );
+    // proxy.translate(bb.x1 * scale, bb.y1 * scale);
   } else {
     var pan = cy.pan();
-    var translation = { x: pan.x * scale, y: pan.y * scale };
-    scale *= cy.zoom();
+    var translation = { x: pan.x, y: pan.y };
+    const scale = cy.zoom();
 
-    if(options.bg) {
-      proxy.background(options.bg);
-    }
     proxy.translate(translation.x, translation.y);
     proxy.scale(scale, scale);
 
@@ -138,17 +199,20 @@ function createPdfBlob(cy, options) {
 
   // Now draw to the PDF context
   const stream = blobStream();
-  const ctx = new PdfEventProcessor(stream, width, height);
+  const ctx = new PdfEventProcessor(stream, paperWidth, paperHeight);
   const p = createBlobPromise(ctx);
 
-  if(options.includeSvgLayers) {
-    const svgLayers = getSvgLayers(cy);
-    drawSvgLayers(ctx, svgLayers.bg);
-    eventBuffer.runDrawEvents(ctx);
-    drawSvgLayers(ctx, svgLayers.fg);
-  } else {
-    eventBuffer.runDrawEvents(ctx);
-  }
+  // TODO this is not going to work, needs to be called inside of the translate/scale setup
+  // if(options.includeSvgLayers) {
+  //   const svgLayers = getSvgLayers(cy);
+  //   drawSvgLayers(ctx, svgLayers.bg);
+  //   eventBuffer.runDrawEvents(ctx);
+  //   drawSvgLayers(ctx, svgLayers.fg);
+  // } else {
+  //   eventBuffer.runDrawEvents(ctx);
+  // }
+
+  eventBuffer.runDrawEvents(ctx);
 
   return p;
 };

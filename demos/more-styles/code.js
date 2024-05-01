@@ -120,6 +120,12 @@ const cy = cytoscape({
 });
 
 cy.ready(() => {
-  window.pdf = () => cy.pdf({ save: true });
+  const options = {
+    save: true,
+    bg: 'lightgray'
+  };
+  window.pdf = (override) => {
+    cy.pdf({ ...options, ...override });
+  };
 });
 
