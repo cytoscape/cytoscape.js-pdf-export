@@ -77,6 +77,23 @@ const cy = cytoscape({
         'line-fill': 'linear-gradient',
         'line-gradient-stop-colors': 'lawngreen red'
       }
+    },
+    {
+      selector: '#n2-n4',
+      style: {
+        'label': 'normal label',
+        'font-size': '6px',
+        'edge-text-rotation': 'autorotate',
+      }
+    },
+    {
+      selector: '#n2-n5',
+      style: {
+        'label': 'bold label',
+        'font-size': '6px',
+        'edge-text-rotation': 'autorotate',
+        'font-weight': 'bold'
+      }
     }
   ],
   elements: {

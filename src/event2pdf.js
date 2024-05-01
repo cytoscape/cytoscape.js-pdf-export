@@ -2,6 +2,7 @@ import PDFDocument from "pdfkit";
 import { calculateArcToGeom } from './arcTo';
 import { createAOP } from "./aop";
 import { color2tuple, rgbToHex } from './colors';
+import { defaultFontData, parseFont } from "./fonts";
 
 /*
  *
@@ -48,37 +49,13 @@ const PdfEventProcessor = function(stream, width, height) {
   this.doc = doc;
   this.stream = doc.pipe(stream);
 
-  let fontValue = "10px Helvetica";
-  let font = fontValue;
-
-  const fontRegex =
-    /^\s*(?=(?:(?:[-a-z]+\s*){0,2}(italic|oblique))?)(?=(?:(?:[-a-z]+\s*){0,2}(small-caps))?)(?=(?:(?:[-a-z]+\s*){0,2}(bold(?:er)?|lighter|[1-9]00))?)(?:(?:normal|\1|\2|\3)\s*){0,3}((?:xx?-)?(?:small|large)|medium|smaller|larger|[.\d]+(?:\%|in|[cem]m|ex|p[ctx]))(?:\s*\/\s*(normal|[.\d]+(?:\%|in|[cem]m|ex|p[ctx])))?\s*([-,\'\"\sa-z]+?)\s*$/i;
-  const defaultFontData = {
-    style: "normal",
-    size: 10,
-    family: "Helvetica",
-    weight: "normal",
-  };
-  const parseFont = function () {
-    const fontPart = fontRegex.exec(font);
-    if (fontPart === null) {
-      return defaultFontData;
-    }
-    const data = {
-      style: fontPart[1] || "normal",
-      size: parseInt(fontPart[4]) || 10,
-      family: fontPart[6] || "Helvetica",
-      weight: fontPart[3] || "normal",
-    };
-    return data;
-  };
-
   // Allows properties to be affected by AOP module
   // TODO remove this?
   const propProps = { enumerable: true, configurable: true };
 
   // We have to remember the values of these properties, pdfkit doesn't have getters for these.
   let lineHeight = doc.currentLineHeight(false);
+  let fontValue = defaultFontData.family;
   Object.defineProperty(this, "font", { ...propProps,
     get: function () { return fontValue; },
     set: function (value) {
