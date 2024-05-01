@@ -85,7 +85,7 @@ const PdfEventProcessor = function(stream, width, height) {
     set(value) {
       fillStyleVal = value;
       if(isPDFGradient(value)) {
-        doc.fillColor(value);
+        doc.fillColor(value, 1);
       } else {
         const { c, a } = fixColor(value);
         doc.fillColor(c, a);
@@ -134,7 +134,7 @@ const PdfEventProcessor = function(stream, width, height) {
     },
   });
 
-  
+
   // Debug tracing for calls to the PDFDocument API
   const pdfkitAop = createAOP();
   pdfkitAop.advice('debug-trace', ({ beforeAll }) => {
