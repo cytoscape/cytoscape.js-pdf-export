@@ -1,6 +1,5 @@
 import CanvasEventBuffer from './canvas2event.js';
 import PdfEventProcessor from './event2pdf.js';
-import { color2tuple } from './colors';
 
 import PDFDocument from 'pdfkit';
 import blobStream from 'blob-stream';
@@ -178,18 +177,21 @@ function createPdfBlob(cy, options) {
   proxy.rect(0, 0, width, height);
   proxy.clip();
 
-  // Draw the network (ie record drawing events)
   if(options.full) {
     proxy.translate(-bb.x1, -bb.y1);
-    
-    renderer.drawElements(proxy, zsortedEles);
   } else {
-    const pan = cy.pan();
-    const zoom = cy.zoom();
-
+    const [ pan, zoom ] = [ cy.pan(), cy.zoom() ];
     proxy.translate(pan.x, pan.y);
     proxy.scale(zoom, zoom);
+  }
 
+  // Draw the network (ie record drawing events)
+  if(options.includeSvgLayers) {
+    const svgLayers = getSvgLayers(cy);
+    proxy.drawSvgLayers(svgLayers.bg);
+    renderer.drawElements(proxy, zsortedEles);
+    proxy.drawSvgLayers(svgLayers.fg);
+  } else {
     renderer.drawElements(proxy, zsortedEles);
   }
 
@@ -214,16 +216,6 @@ function createPdfBlob(cy, options) {
   const ctx = new PdfEventProcessor(stream, paperWidth, paperHeight, options.debug);
   const p = createBlobPromise(ctx);
 
-  // TODO this is not going to work, needs to be called inside of the translate/scale setup
-  // if(options.includeSvgLayers) {
-  //   const svgLayers = getSvgLayers(cy);
-  //   drawSvgLayers(ctx, svgLayers.bg);
-  //   eventBuffer.runDrawEvents(ctx);
-  //   drawSvgLayers(ctx, svgLayers.fg);
-  // } else {
-  //   eventBuffer.runDrawEvents(ctx);
-  // }
-
   eventBuffer.runDrawEvents(ctx);
 
   return p;
@@ -243,16 +235,12 @@ function createBlobPromise(ctx) {
   });
 }
 
-function isNumber(obj) {
-  return obj != null && typeof obj === typeof 1 && !isNaN(obj);
-}
-
-function isTag(ele, tagName) {
-  return ele.tagName && ele.tagName.toLowerCase() === tagName.toLowerCase();
-}
 
 
 function getSvgLayers(cy) {
+  const isTag = (ele, tagName) =>
+    ele.tagName && ele.tagName.toLowerCase() === tagName.toLowerCase();
+
   const bgLayers = [];
   const fgLayers = [];
   const containerDiv = cy.container().children[0];
@@ -271,63 +259,3 @@ function getSvgLayers(cy) {
     fg: fgLayers
   }
 }
-
-
-function drawSvgLayers(ctx, svgElements) {
-  for(const svg of svgElements) {
-    const gs = svg.getElementsByTagName('g');
-    for(const g of gs) {
-      const paths = g.getElementsByTagName('path');
-      for(const path of paths) {
-        drawSvgPath(ctx, path);
-      }
-    }
-  }
-}
-
-
-function drawSvgPath(ctx, path) {
-  const pdfDoc = ctx.doc;
-
-  const setColor = (val, rgbcb, alphacb) => {
-    if(typeof val === 'string') {
-      const tuple = color2tuple(val);
-      if(tuple) {
-        const rgb = tuple.slice(0, 3);
-        const a = tuple[3];
-        rgbcb(rgb);
-        if(typeof a !== 'undefined') {
-          alphacb(a);
-        }
-      }
-    }
-  };
-
-  const setNum = (val, cb) => {
-    const num = Number(val);
-    if(!isNaN(num)) {
-      cb(num);
-    }
-  };
-
-  const { style } = path;
-  if(style) {
-    setColor(style.fill, 
-      rgb => pdfDoc.fillColor(rgb),
-      a   => pdfDoc.fillOpacity(a)
-    );
-    setColor(style.stroke, 
-      rgb => pdfDoc.strokeColor(rgb),
-      a   => pdfDoc.strokeOpacity(a)
-    );
-    setNum(style.strokeWidth, 
-      w => pdfDoc.lineWidth(w)
-    );
-  }
-  
-  const svgPathStr = path.getAttribute('d');
-
-  pdfDoc.path(svgPathStr);
-  pdfDoc.fillAndStroke();
-}
-

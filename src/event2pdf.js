@@ -455,6 +455,63 @@ const PdfEventProcessor = function(stream, width, height, debug) {
   };
 
 
+  this.drawSvgLayers = function(svgElements) {
+    function drawSvgPath(path) {
+      const setColor = (val, rgbcb, alphacb) => {
+        if(typeof val === 'string') {
+          const tuple = color2tuple(val);
+          if(tuple) {
+            const rgb = tuple.slice(0, 3);
+            const a = tuple[3];
+            rgbcb(rgb);
+            if(typeof a !== 'undefined') {
+              alphacb(a);
+            }
+          }
+        }
+      };
+    
+      const setNum = (val, cb) => {
+        const num = Number(val);
+        if(!isNaN(num)) {
+          cb(num);
+        }
+      };
+    
+      const { style } = path;
+      if(style) {
+        setColor(style.fill, 
+          rgb => doc.fillColor(rgb),
+          a   => doc.fillOpacity(a)
+        );
+        setColor(style.stroke, 
+          rgb => doc.strokeColor(rgb),
+          a   => doc.strokeOpacity(a)
+        );
+        setNum(style.strokeWidth, 
+          w => doc.lineWidth(w)
+        );
+      }
+        
+      const svgPathStr = path.getAttribute('d');
+
+      doc.path(svgPathStr);
+      doc.fillAndStroke();
+    }
+
+    for(const svg of svgElements) {
+      const gs = svg.getElementsByTagName('g');
+      for(const g of gs) {
+        const paths = g.getElementsByTagName('path');
+        for(const path of paths) {
+          drawSvgPath(path);
+        }
+      }
+    }
+  }
+
+
+
   /**
    * Not yet implemented
    */

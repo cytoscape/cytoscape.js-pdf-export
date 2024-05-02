@@ -5,7 +5,7 @@ const canvasProps = new Set([
   'transform', 'beginPath', 'lineTo', 'moveTo', 'arcTo', 'closePath', 
   'stroke', 'fill', 'ellipse', 'rect', 'arc', 'bezierCurveTo', 'quadraticCurveTo',
   'adjustTextX', 'adjustTextY', 'fillText', 'strokeText', 'clip',
-  'drawImage', 'setLineDash'
+  'drawImage', 'setLineDash', 'drawSvgLayers'
 ]);
 
 const gradientProps = new Set([
