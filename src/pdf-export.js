@@ -138,75 +138,59 @@ function createPdfBlob(cy, options) {
   const bb = eles.boundingBox();
 
   const { margin } = options;
-  const [ paperWidth, paperHeight ] = getPaperSize(options);
-  const width  = paperWidth  - (margin * 2);
-  const height = paperHeight - (margin * 2);
+  const [ paperWidth, paperHeight ] = getPaperSize(options); 
+  const paperDrawWidth  = paperWidth  - (margin * 2);
+  const paperDrawHeight = paperHeight - (margin * 2);
 
-  // const [,, networkWidth, networkHeight ] = renderer.findContainerClientCoords();
-  // const imageScale = Math.min(width / networkWidth, height / networkHeight);
+  // Fit the network to the paper drawing region
+  let scale, width, height;
+  if(options.full) {
+    scale = Math.min(paperDrawWidth / bb.w, paperDrawHeight / bb.h);
+    width  = bb.w;
+    height = bb.h;
+  } else {
+    const [,, containerWidth, containerHeight ] = renderer.findContainerClientCoords();
+    scale = Math.min(paperDrawWidth / containerWidth, paperDrawHeight / containerHeight);
+    width  = containerWidth;
+    height = containerHeight;
+  }
 
-  // if(options.debug) {
-  //   console.log('paper width/height', paperWidth, paperWidth);
-  //   console.log('draw width/height (minus margins)', width, height);
-  //   console.log('network width/height', networkWidth, networkHeight);
-  //   console.log('imageScale', imageScale);
-  // }
+  if(options.debug) {
+    console.log('paper draw area width/height', paperDrawWidth, paperDrawHeight);
+    console.log('network width/height', width, height);
+    console.log('scale', scale);
+  }
 
   // Record the calls to the canvas API, but don't actually draw anything yet.
   const eventBuffer = CanvasEventBuffer(options.debug);
   const proxy = eventBuffer.proxy; // The proxy is a stand-in for CanvasRenderingContext2D
 
+  // Initialize the renderer
   const restoreRenderer = initRenderer(cy);
   const zsortedEles = renderer.getCachedZSortedEles();
 
-  // proxy.translate(margin, margin);
-  // proxy.scale(imageScale, imageScale);
-  // if(options.bg) {
-  //   proxy.background(0, 0, networkWidth, networkHeight, options.bg);
-  // }
-  // proxy.rect(0, 0, networkWidth, networkHeight);
-  // proxy.clip();
+  // Setup the viewport
+  proxy.translate(margin, margin);
+  proxy.scale(scale, scale);
+  if(options.bg) {
+    proxy.background(0, 0, width, height, options.bg);
+  }
+  proxy.rect(0, 0, width, height);
+  proxy.clip();
 
-
+  // Draw the network (ie record drawing events)
   if(options.full) {
-    const scale = Math.min(width / bb.w, height / bb.h);
-
-    proxy.translate(margin, margin);
-    proxy.scale(scale, scale);
-    if(options.bg) {
-      proxy.background(0, 0, bb.w, bb.h, options.bg);
-    }
-    proxy.rect(0, 0, bb.w, bb.h);
-    proxy.clip();
-
     proxy.translate(-bb.x1, -bb.y1);
-
+    
     renderer.drawElements(proxy, zsortedEles);
-
-    proxy.translate(bb.x1, bb.y1);
   } else {
-    const [,, networkWidth, networkHeight ] = renderer.findContainerClientCoords();
-    const imageScale = Math.min(width / networkWidth, height / networkHeight);
+    const pan = cy.pan();
+    const zoom = cy.zoom();
 
-    proxy.translate(margin, margin);
-    proxy.scale(imageScale, imageScale);
-    if(options.bg) {
-      proxy.background(0, 0, networkWidth, networkHeight, options.bg);
-    }
-    proxy.rect(0, 0, networkWidth, networkHeight);
-    proxy.clip();
-
-    var pan = cy.pan();
-    var translation = { x: pan.x, y: pan.y };
-    const scale = cy.zoom();
-
-    proxy.translate(translation.x, translation.y);
-    proxy.scale(scale, scale);
+    proxy.translate(pan.x, pan.y);
+    proxy.scale(zoom, zoom);
 
     renderer.drawElements(proxy, zsortedEles);
-
-    proxy.scale(1/scale, 1/scale);
-    proxy.translate(-translation.x, -translation.y);
   }
 
   proxy.end();
