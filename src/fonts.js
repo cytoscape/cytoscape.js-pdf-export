@@ -46,6 +46,8 @@ function getFont(fontFamilyStr, weight, style) {
       return family;
     } else if(family === 'sans-serif') {
       return 'Helvetica';
+    } else if(family === 'serif') {
+      return 'Times-Roman';
     }
   }
   return defaultFontData.family;
