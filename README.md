@@ -1,7 +1,7 @@
 cytoscape.js-pdf-export
 =======================
 
-Cytoscape.js extension for exporting networks to PDF (using PDFkit).
+Cytoscape.js extension for exporting networks to PDF (using [PDFkit](https://github.com/foliojs/pdfkit)).
 
 ## License
 
@@ -15,7 +15,6 @@ Cytoscape.js extension for exporting networks to PDF (using PDFkit).
 ## How to use
 
 ### Installation
-* (TODO) via npm: `npm install cytoscape-pdf-export`
 * (TEMPORARY) via github url...
 
 ```json
@@ -48,7 +47,7 @@ saveAs(blob, 'network.pdf', true);
 
 ### Options
 
-* The options object passed to the pdf(options) function is outlined below, with default values.
+* The options object passed to the `cy.pdf(options)` function is outlined below, with default values.
 
 ```js
 const options = {
@@ -57,7 +56,7 @@ const options = {
   full: false, 
 
   // The background color to use, or none if false. 
-  // Can be any CSS color value that's already accepted by Cytoscape.js
+  // Can be any CSS color value that's accepted by Cytoscape.js
   bg: false,
 
   // The paper size, see below for accepted values for these options.
@@ -79,32 +78,30 @@ const options = {
   // If true will log debug info to the console.
   debug: false, 
 
-  // The options below are temporary and will likely be removed in the future.
-  save: false, // causes a save-as window to pop-up when the PDF is ready to be downloaded 
+  // The options below are temporary and will be removed in the future.
+  save: false, // causes a save-as window to pop up when the PDF is ready to be downloaded 
   fileName: 'cytoscape.pdf', 
 };
 ```
 
-* Paper sizes:
-  * Currently supported paper sizes are:
-    * CUSTOM, LETTER (default), LEGAL, TABLOID, A0, A1, A2, A3, A4, A5
-    * In PORTRAIT or LANDSCAPE orientation
-    * CUSTOM requires specifying your own width and height in "Postscript Points" (72 units per inch)
-  * Margins default to 3/4 inch
+* Currently supported `paperSize` values are:
+  * CUSTOM, LETTER (default), LEGAL, TABLOID, A0, A1, A2, A3, A4, A5
+  * PORTRAIT or LANDSCAPE orientation
+  * CUSTOM requires specifying your own width and height in "Postscript Points" (72 units per inch)
+* Margins default to 3/4 inch
 
 ## Fonts
 
-* Supported Fonts:
-  * Fonts are limited to those provided by PDFKit.
-    * Courier (normal, bold, oblique)
-    * Helvetica (normal, bold, oblique)
-    * Times (normal, bold, italic)
-    * Times New Roman
-    * Symbol
-    * ZapfDingbats
-  * If an unsupported font is found, it will default to Helvetica.
-  * 'sans-serif' defaults to Helvetica
-  * 'serif' defaults to Times New Roman
+* Fonts are limited to those provided by PDFKit.
+  * Courier (normal, bold, oblique)
+  * Helvetica (normal, bold, oblique)
+  * Times (normal, bold, italic)
+  * Times New Roman
+  * Symbol
+  * ZapfDingbats
+* If an unsupported font is specified, it will default to Helvetica.
+* 'sans-serif' defaults to Helvetica
+* 'serif' defaults to Times New Roman
 
 ## Reporting Bugs
 
