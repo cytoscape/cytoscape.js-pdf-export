@@ -15,8 +15,8 @@ Cytoscape.js extension for exporting networks to PDF (using [PDFkit](https://git
 ## How to use
 
 ### Installation
-* (TEMPORARY) via github url...
-
+* via npm: `npm install cytoscape-pdf-export`
+* via github url...
 ```json
 "dependencies": {
   "cytoscape-pdf-export": "cytoscape/cytoscape.js-pdf-export#release/0.0.2",

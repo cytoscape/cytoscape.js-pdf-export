@@ -2,7 +2,14 @@
   "name": "cytoscape-pdf-export",
   "version": "0.0.2",
   "description": "Export cytoscape.js networks to PDF",
-
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cytoscape/cytoscape.js-pdf-export.git"
+  },
+  "bugs": {
+    "url": "https://github.com/cytoscape/cytoscape.js-pdf-export/issues"
+  },
   "scripts": {
     "dev": "webpack --mode development",
     "pdfkit": "webpack --mode production --config webpack.pdfkit.config.js",
