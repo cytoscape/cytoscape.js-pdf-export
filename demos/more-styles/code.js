@@ -51,7 +51,9 @@ const cy = cytoscape({
       style: {
         "border-color": "red",
         "border-style": "dotted",
-        "border-width": 4
+        "border-width": 4,
+        'text-background-color': '#555',
+        'text-background-opacity': 1,
       }
     },
     {

@@ -4,7 +4,7 @@ const canvasProps = new Set([
   'background', 'end', 'save', 'restore', 'scale', 'rotate', 'translate',
   'transform', 'beginPath', 'lineTo', 'moveTo', 'arcTo', 'closePath', 
   'stroke', 'fill', 'ellipse', 'rect', 'arc', 'bezierCurveTo', 'quadraticCurveTo',
-  'adjustTextX', 'adjustTextY', 'fillText', 'strokeText', 'clip',
+  'adjustTextX', 'adjustTextY', 'fillText', 'strokeText', 'fillRect', 'clip',
   'drawImage', 'setLineDash', 'drawSvgLayers'
 ]);
 
