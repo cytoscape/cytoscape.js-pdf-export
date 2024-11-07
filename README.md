@@ -59,15 +59,15 @@ const options = {
   // Can be any CSS color value that's accepted by Cytoscape.js
   bg: false,
 
-  // The paper size, see below for accepted values for these options.
-  paperSize: 'LETTER', 
-  orientation: 'PORTRAIT',
+  // The paper size and orientation
+  paperSize: 'LETTER', // can be CUSTOM, LETTER (default), LEGAL, TABLOID, A0, A1, A2, A3, A4, A5
+  orientation: 'PORTRAIT', // can be PORTRAIT or LANDSCAPE
 
-  // The width/height to use when the paperSize is set to 'CUSTOM'
+  // The width/height to use when paperSize is set to 'CUSTOM'
   width: null,  // paper width  in "PostScript points", 72 units per inch
   height: null, // paper height in "PostScript points", 72 units per inch
 
-  // The margin, default is 52 units which represents 3/4 of an inch.
+  // The margin, default is 52 units which is 3/4 of an inch.
   margin: 52,
 
   // There is limited support for the cytoscape-layers extension.
@@ -84,11 +84,6 @@ const options = {
 };
 ```
 
-* Currently supported `paperSize` values are:
-  * CUSTOM, LETTER (default), LEGAL, TABLOID, A0, A1, A2, A3, A4, A5
-  * PORTRAIT or LANDSCAPE orientation
-  * CUSTOM requires specifying your own width and height in "Postscript Points" (72 units per inch)
-* Margins default to 3/4 inch
 
 ## Fonts
 
@@ -110,7 +105,7 @@ const options = {
 
 ## Known Limitations
 
-* In Cytoscape.js when a node border opacity is partially transparent it sometimes sometimes looks like two rings. 
+* In Cytoscape.js when node border opacity is partially transparent it sometimes sometimes looks like two rings. 
   This is because the fill part of the node is 1/2 underneath the border, so when the border is transparent the 
   part that's over the fill ends up with a different color than the part that's not over the fill.
   This does not happen with PDFkit (not sure why), the border will look like a solid ring.
