@@ -110,3 +110,4 @@ const options = {
   part that's over the fill ends up with a different color than the part that's not over the fill.
   This does not happen with PDFkit (not sure why), the border will look like a solid ring.
 * When using dashed or dotted edge lines or node borders, the dashes may not line up exactly as they look in Cytoscape.js.
+* Fonts are limited to the ones listed above.
