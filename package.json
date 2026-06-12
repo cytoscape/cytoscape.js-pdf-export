@@ -1,6 +1,6 @@
 {
   "name": "cytoscape-pdf-export",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Export cytoscape.js networks to PDF",
   "license": "MIT",
   "repository": {
