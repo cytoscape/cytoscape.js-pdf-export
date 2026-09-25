@@ -16,6 +16,18 @@
   });
 
   cy.ready(() => {
-    window.pdf = () => cy.pdf({ save: true });
+    window.pdf = () => cy.pdf({
+      save: true,
+      fileName: 'cytoscape-node-types.pdf'
+    });
+
+    const exportBtn = document.getElementById('export');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', () => {
+        if (window.pdf) {
+          window.pdf();
+        }
+      });
+    }
   });
 })();

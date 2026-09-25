@@ -42,5 +42,18 @@ const cy = cytoscape({
 });
 
 cy.ready(() => {
-  window.pdf = () => cy.pdf({ bg: '#000' });
+  window.pdf = () => cy.pdf({
+    bg: '#000',
+    fileName: 'cytoscape-getting-started.pdf',
+    save: true
+  });
+
+  const exportBtn = document.getElementById('export');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      if (window.pdf) {
+        window.pdf();
+      }
+    });
+  }
 });

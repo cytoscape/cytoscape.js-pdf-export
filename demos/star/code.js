@@ -50,6 +50,19 @@ const cy = cytoscape({
 });
 
 cy.ready(() => {
-  window.pdf = () => cy.pdf({ bg: '#000', save: true });
+  window.pdf = () => cy.pdf({
+    bg: '#000',
+    save: true,
+    fileName: 'cytoscape-star.pdf'
+  });
+
+  const exportBtn = document.getElementById('export');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      if (window.pdf) {
+        window.pdf();
+      }
+    });
+  }
 });
 
