@@ -21,7 +21,8 @@ const baseConfig = {
       // maps fs to a virtual one allowing to register file content dynamically
       fs: 'pdfkit/js/virtual-fs.js',
       // iconv-lite is used to load cid less fonts (not spec compliant)
-      'iconv-lite': false
+      'iconv-lite': false,
+      fontkit: false
     },
     fallback: {
       // crypto module is not necessary at browser
