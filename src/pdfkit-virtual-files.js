@@ -37,12 +37,10 @@ import HelveticaBold from 'pdfkit/js/data/Helvetica-Bold.afm';
 import HelveticaBoldOblique from 'pdfkit/js/data/Helvetica-BoldOblique.afm';
 import HelveticaOblique from 'pdfkit/js/data/Helvetica-Oblique.afm';
 import Helvetica from 'pdfkit/js/data/Helvetica.afm';
-import Symbol from 'pdfkit/js/data/Symbol.afm';
 import TimesBold from 'pdfkit/js/data/Times-Bold.afm';
 import TimesBoldItalic from 'pdfkit/js/data/Times-BoldItalic.afm';
 import TimesItalic from 'pdfkit/js/data/Times-Italic.afm';
 import TimesRoman from 'pdfkit/js/data/Times-Roman.afm';
-import ZapfDingbats from 'pdfkit/js/data/ZapfDingbats.afm';
 
 fs.writeFileSync('data/Courier-Bold.afm', CourierBold);
 fs.writeFileSync('data/Courier-BoldOblique.afm', CourierBoldOblique);
@@ -52,10 +50,8 @@ fs.writeFileSync('data/Helvetica-Bold.afm', HelveticaBold);
 fs.writeFileSync('data/Helvetica-BoldOblique.afm', HelveticaBoldOblique);
 fs.writeFileSync('data/Helvetica-Oblique.afm', HelveticaOblique);
 fs.writeFileSync('data/Helvetica.afm', Helvetica);
-fs.writeFileSync('data/Symbol.afm', Symbol);
 fs.writeFileSync('data/Times-Bold.afm', TimesBold);
 fs.writeFileSync('data/Times-BoldItalic.afm', TimesBoldItalic);
 fs.writeFileSync('data/Times-Italic.afm', TimesItalic);
 fs.writeFileSync('data/Times-Roman.afm', TimesRoman);
-fs.writeFileSync('data/ZapfDingbats.af', ZapfDingbats);
 

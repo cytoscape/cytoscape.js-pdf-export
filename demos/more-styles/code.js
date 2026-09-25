@@ -140,10 +140,20 @@ const cy = cytoscape({
 cy.ready(() => {
   const options = {
     save: true,
-    bg: 'lightgray'
+    bg: 'lightgray',
+    fileName: 'cytoscape-more-styles.pdf'
   };
   window.pdf = (override) => {
     cy.pdf({ ...options, ...override });
   };
+
+  const exportBtn = document.getElementById('export');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+      if (window.pdf) {
+        window.pdf();
+      }
+    });
+  }
 });
 

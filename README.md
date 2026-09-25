@@ -92,20 +92,17 @@ const options = {
   * Helvetica (normal, bold, oblique)
   * Times (normal, bold, italic)
   * Times New Roman
-  * Symbol
-  * ZapfDingbats
 * If an unsupported font is specified, it will default to Helvetica.
 * 'sans-serif' defaults to Helvetica
 * 'serif' defaults to Times New Roman
 
 ## Reporting Bugs
 
-* This extension is still very new, there are likely to be bugs. 
-  Please report bugs to this GitHub repository issue tracker.
+* Please report bugs to this GitHub repository issue tracker.
 
 ## Known Limitations
 
-* In Cytoscape.js when node border opacity is partially transparent it sometimes sometimes looks like two rings. 
+* In Cytoscape.js when node border opacity is partially transparent it sometimes looks like two rings. 
   This is because the fill part of the node is 1/2 underneath the border, so when the border is transparent the 
   part that's over the fill ends up with a different color than the part that's not over the fill.
   This does not happen with PDFkit (not sure why), the border will look like a solid ring.
